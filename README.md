@@ -35,14 +35,16 @@ pinned: false
 ## 🛠 Tech Stack
 
 ### AI & Data Architecture
-| Component | Technology | Purpose |
-|:---|:---|:---|
-| **LLM Core** | Gemini 1.5 Flash / 2.0 | Natural Language Processing via OpenRouter / Google AI. |
-| **Vector DB** | **ChromaDB** | Storing and querying agricultural knowledge as vectors. |
-| **ML Engine** | XGBoost & TFT | Time-series forecasting for prices and yields. |
-| **Expert System** | Python Logic | Executing agronomic hard rules and ecological constraints. |
+
+| Component         | Technology             | Purpose                                                    |
+| :---------------- | :--------------------- | :--------------------------------------------------------- |
+| **LLM Core**      | Gemini 1.5 Flash / 2.0 | Natural Language Processing via OpenRouter / Google AI.    |
+| **Vector DB**     | **ChromaDB**           | Storing and querying agricultural knowledge as vectors.    |
+| **ML Engine**     | XGBoost & TFT          | Time-series forecasting for prices and yields.             |
+| **Expert System** | Python Logic           | Executing agronomic hard rules and ecological constraints. |
 
 ### System & Deployment
+
 - **Backend**: FastAPI (Asynchronous, High Performance).
 - **Frontend**: Vanilla JS, HTML5, CSS3 (Lightweight & Mobile Responsive).
 - **Containerization**: Docker & Docker Compose.
@@ -52,18 +54,19 @@ pinned: false
 
 ## 📂 Module Structure
 
-| Module | Primary Function |
-|:---|:---|
-| `server/ai_models` | RAG logic, vector processing, and forecasting models. |
-| `server/routers` | API endpoints (Chat, Predict, Admin, Auth). |
-| `server/data` | Persistent storage for `nongsan.db` (SQLite) and `chroma_db`. |
-| `client/` | Web interface optimized for both Desktop and Mobile devices. |
+| Module             | Primary Function                                              |
+| :----------------- | :------------------------------------------------------------ |
+| `server/ai_models` | RAG logic, vector processing, and forecasting models.         |
+| `server/routers`   | API endpoints (Chat, Predict, Admin, Auth).                   |
+| `server/data`      | Persistent storage for `nongsan.db` (SQLite) and `chroma_db`. |
+| `client/`          | Web interface optimized for both Desktop and Mobile devices.  |
 
 ---
 
 ## 📦 Quick Start
 
 ### 1. Deployment with Docker
+
 ```bash
 git clone https://github.com/Messiac24/tro-ly-than-nong.git
 cd tro-ly-than-nong
@@ -71,6 +74,7 @@ docker-compose up -d --build
 ```
 
 ### 2. API Usage (For Developers)
+
 The system provides a Swagger UI for testing endpoints at `http://localhost:8000/docs`:
 
 ```python
@@ -86,11 +90,12 @@ print(response.json()["answer"])
 
 ## 💡 Technical Notes
 
-*   **Why RAG instead of Fine-tuning?** RAG allows for immediate knowledge updates by uploading PDFs without retraining the model. It also ensures the AI (Gemini 1.5/2.0) provides verifiable citations from the source material.
-*   **Multi-model Support**: The system is designed to work with **OpenRouter**, allowing easy switching between different Gemini versions or other LLMs if needed.
-*   **Data Privacy**: All conversation history and simulation data are stored locally in SQLite, ensuring farmer data remains private and secure.
-*   **Performance**: The backend is built with an asynchronous (Async) architecture, enabling it to handle high concurrency without performance degradation.
+- **Why RAG instead of Fine-tuning?** RAG allows for immediate knowledge updates by uploading PDFs without retraining the model. It also ensures the AI (Gemini 1.5/2.0) provides verifiable citations from the source material.
+- **Multi-model Support**: The system is designed to work with **OpenRouter**, allowing easy switching between different Gemini versions or other LLMs if needed.
+- **Data Privacy**: All conversation history and simulation data are stored locally in SQLite, ensuring farmer data remains private and secure.
+- **Performance**: The backend is built with an asynchronous (Async) architecture, enabling it to handle high concurrency without performance degradation.
 
 ---
+
 **Developed by [Messiac24](https://github.com/Messiac24)**
 _Modernizing Vietnamese Agriculture through Artificial Intelligence._
