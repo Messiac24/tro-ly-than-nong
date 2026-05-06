@@ -23,7 +23,7 @@
 ### AI & Data Architecture
 | Component | Technology | Purpose |
 |:---|:---|:---|
-| **LLM Core** | GPT-4o / Claude 3.5 | Natural Language Processing and reasoning. |
+| **LLM Core** | Gemini 1.5 Flash / 2.0 | Natural Language Processing via OpenRouter / Google AI. |
 | **Vector DB** | **ChromaDB** | Storing and querying agricultural knowledge as vectors. |
 | **ML Engine** | XGBoost & TFT | Time-series forecasting for prices and yields. |
 | **Expert System** | Python Logic | Executing agronomic hard rules and ecological constraints. |
@@ -72,7 +72,8 @@ print(response.json()["answer"])
 
 ## 💡 Technical Notes
 
-*   **Why RAG instead of Fine-tuning?** RAG allows for immediate knowledge updates by uploading PDFs without retraining the model. It also ensures the AI provides verifiable citations from the source material.
+*   **Why RAG instead of Fine-tuning?** RAG allows for immediate knowledge updates by uploading PDFs without retraining the model. It also ensures the AI (Gemini 1.5/2.0) provides verifiable citations from the source material.
+*   **Multi-model Support**: The system is designed to work with **OpenRouter**, allowing easy switching between different Gemini versions or other LLMs if needed.
 *   **Data Privacy**: All conversation history and simulation data are stored locally in SQLite, ensuring farmer data remains private and secure.
 *   **Performance**: The backend is built with an asynchronous (Async) architecture, enabling it to handle high concurrency without performance degradation.
 
