@@ -5,7 +5,7 @@
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-**Trợ Lý Thần Nông** là một hệ thống AI tiên tiến được thiết kế để hỗ trợ nông dân (đặc biệt tại khu vực Lâm Đồng) trong việc tối ưu hóa quy trình canh tác, dự báo rủi ro sinh thái và phân tích thị trường nông sản. Hệ thống kết hợp sức mạnh của công nghệ **RAG (Retrieval-Augmented Generation)** và **Hệ chuyên gia (Expert Rules)** để đưa ra những lời khuyên chính xác và đáng tin cậy.
+**Trợ Lý Thần Nông** là một hệ thống AI tiên tiến được thiết kế để hỗ trợ nông dân (đặc biệt tại khu vực Lâm Đồng) trong việc tối ưu hóa quy trình canh tác, dự báo rủi ro sinh thái và phân tích thị trường nông sản. Hệ thống kết hợp sức mạnh của công nghệ **RAG** và **Hệ chuyên gia** để đưa ra những lời khuyên chính xác và đáng tin cậy.
 
 ---
 
