@@ -12,6 +12,7 @@ pinned: false
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
+[![Hugging Face Space](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-yellow)](https://fdhr-tro-ly-than-nong.hf.space/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-blue)](https://www.docker.com/)
 
 **Trợ Lý Thần Nông** is a specialized AI system designed for agriculture, combining **RAG (Retrieval-Augmented Generation)** and **Expert Rules** to provide precise cultivation guidance and ecological risk management.
@@ -64,6 +65,10 @@ pinned: false
 ---
 
 ## 📦 Quick Start
+
+### 🌐 Live Demo
+Experience the live application at:
+👉 **[Trợ Lý Thần Nông - Hugging Face Spaces](https://fdhr-tro-ly-than-nong.hf.space/)**
 
 ### 1. Deployment with Docker
 
