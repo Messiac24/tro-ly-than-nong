@@ -14,12 +14,9 @@ if str(SERVER_DIR) not in sys.path:
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
-try:
-    from server.database import SessionLocal
-    from server import models
-except ImportError:
-    from database import SessionLocal
-    import models
+# Import từ package server
+from server.database import SessionLocal
+from server import models
 import bcrypt
 
 def create_admin():

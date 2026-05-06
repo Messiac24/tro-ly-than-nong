@@ -9,12 +9,8 @@ if str(SERVER_DIR) not in sys.path:
     sys.path.insert(0, str(SERVER_DIR))
 
 try:
-    try:
-        from server.database import SessionLocal
-        from server import models
-    except ImportError:
-        from database import SessionLocal
-        import models
+    from server.database import SessionLocal
+    from server import models
     print("Nap module database va models thanh cong!")
 except ImportError as e:
     print(f"Loi nap module: {e}")

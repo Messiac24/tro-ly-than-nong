@@ -12,12 +12,8 @@ if current_dir not in sys.path:
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-try:
-    from server import models
-    from server.database import engine
-except ImportError:
-    import models
-    from database import engine
+import models
+from database import engine
 from fastapi.staticfiles import StaticFiles
 
 # Encoding fix for Windows

@@ -20,20 +20,12 @@ if str(BASE_DIR) not in sys.path:
     sys.path.insert(0, str(BASE_DIR))
 
 try:
-    # Thử import trực tiếp từ server nếu có thể
     from server.database import SessionLocal
     from server import models
-    print("Kết nối module qua server package thành công!")
-except (ImportError, ModuleNotFoundError):
-    try:
-        # Fallback: import như một module ngang hàng (khi đã add SERVER_DIR vào path)
-        import database
-        import models
-        from database import SessionLocal
-        print("Kết nối module trực tiếp thành công!")
-    except Exception as e:
-        print(f"Lỗi nghiêm trọng khi nạp module: {e}")
-        sys.exit(1)
+    print("Kết nối module thành công!")
+except ImportError as e:
+    print(f"Lỗi nạp module: {e}")
+    sys.exit(1)
 
 db = SessionLocal()
 user = db.query(models.User).filter(models.User.username == "admin").first()
