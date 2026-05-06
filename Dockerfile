@@ -14,16 +14,11 @@ COPY server/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy toàn bộ mã nguồn
-# Chúng ta copy cả server và client để FastAPI có thể phục vụ file tĩnh
 COPY server/ ./server/
 COPY client/ ./client/
 
-# Tạo thư mục data để lưu SQLite nếu chưa có
 RUN mkdir -p /app/server/data
 
-# Port FastAPI (Render sẽ tự nhận diện port này)
-EXPOSE 8000
-
-# Chạy server
-# Chú ý: Render cần host 0.0.0.0
-CMD ["uvicorn", "server.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Quan trọng: Không dùng EXPOSE cố định, Render sẽ tự quản lý
+# Dùng shell form cho CMD để nhận được biến môi trường $PORT
+CMD uvicorn server.main:app --host 0.0.0.0 --port ${PORT:-8000}
