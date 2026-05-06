@@ -11,9 +11,13 @@
 ## 🚀 Key Features
 
 ✔️ **RAG-based Consultation**: Retrieves information directly from official technical manuals (PDFs), eliminating AI hallucinations.
+
 ✔️ **Expert Rules Engine**: Provides risk alerts based on real-world data including elevation, soil types, and weather patterns in the Lam Dong region.
+
 ✔️ **Market Forecasting**: Utilizes Machine Learning (XGBoost/TFT) to simulate ROI and predict agricultural price trends.
+
 ✔️ **Smart Administration**: Intuitive dashboard with seamless knowledge ingestion—update the AI's knowledge base by simply uploading a PDF.
+
 ✔️ **Safety Guardrails**: Integrated protection against prompt injection and content filtering for inappropriate topics.
 
 ---
