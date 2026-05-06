@@ -10,14 +10,9 @@ SERVER_DIR = BASE_DIR / "server"
 if str(SERVER_DIR) not in sys.path:
     sys.path.insert(0, str(SERVER_DIR))
 
-try:
-    # Thử import theo kiểu package (giúp Linter/VS Code nhận diện đúng)
-    from server.database import SessionLocal, engine
-    from server import models
-except ImportError:
-    # Fallback cho các môi trường chạy trực tiếp từ thư mục server
-    from database import SessionLocal, engine
-    import models
+# Import từ package server
+from server.database import SessionLocal, engine
+from server import models
 import bcrypt
 
 def get_password_hash(password):
