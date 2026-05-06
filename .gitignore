@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+.claude/
+.gemini/
+lightning_logs/
+test_output.txt
+pip.pyz
+get-pip.py
+node_modules/
+.DS_Store
+*.pyc
+.env
