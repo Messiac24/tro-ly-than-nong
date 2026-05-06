@@ -10,8 +10,12 @@ SERVER_DIR = BASE_DIR / "server"
 if str(SERVER_DIR) not in sys.path:
     sys.path.insert(0, str(SERVER_DIR))
 
-from database import SessionLocal, engine
-import models
+try:
+    from database import SessionLocal, engine
+    import models
+except ImportError:
+    from server.database import SessionLocal, engine
+    from server import models
 import bcrypt
 
 def get_password_hash(password):

@@ -1,24 +1,26 @@
-
 import sys
 import os
 from pathlib import Path
 
-# Đưa thư mục server vào sys.path để import modules
+# Xác định đường dẫn tuyệt đối của thư mục gốc và thư mục server
 BASE_DIR = Path(__file__).resolve().parent
 SERVER_DIR = BASE_DIR / "server"
+
+# Thêm thư mục server vào sys.path để Python tìm thấy database.py và models.py
 if str(SERVER_DIR) not in sys.path:
     sys.path.insert(0, str(SERVER_DIR))
 
-# Fix encoding cho Windows
+# Fix encoding cho Windows để tránh lỗi hiển thị emoji/tiếng Việt
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
-if hasattr(sys.stderr, 'reconfigure'):
-    sys.stderr.reconfigure(encoding='utf-8')
 
-
-
-from database import SessionLocal
-import models
+try:
+    from database import SessionLocal
+    import models
+except ImportError:
+    # Phương án dự phòng nếu sys.path.insert không hiệu quả trong một số môi trường
+    from server.database import SessionLocal
+    from server import models
 import bcrypt
 
 def create_admin():

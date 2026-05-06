@@ -1,3 +1,13 @@
+---
+title: Tro Ly Than Nong
+emoji: 🌾
+colorFrom: green
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🌾 Trợ Lý Thần Nông (Agricultural Assistant)
 
 Hệ thống hỗ trợ nông nghiệp kết hợp **RAG (Retrieval-Augmented Generation)** và **Expert Rules** để cung cấp hướng dẫn canh tác và quản lý rủi ro cho khu vực Lâm Đồng.
