@@ -1,8 +1,5 @@
 """
-⚙️ Cấu hình Hệ thống - Hằng số & Ánh xạ
-
-Chứa toàn bộ hằng số hệ thống, ánh xạ vùng canh tác,
-thông tin cây trồng, và các ngưỡng rủi ro.
+Cấu hình Hệ thống - Hằng số & Ánh xạ
 """
 
 import os
@@ -10,11 +7,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# ── API Key ─────────────────────────────────────────────────
+# API Key
 API_KEY = os.getenv("API_KEY", "dev-key-ai-nong-san-2026")
 
-# ── Ánh xạ Vùng Canh Tác ───────────────────────────────────
-# Dữ liệu thực tế: Tọa độ GPS, độ cao, tên tìm kiếm
+# Ánh xạ Vùng Canh Tác
 LOCATION_MAPPING = {
     "Phường B'Lao": {
         "display_name": "Phường B'Lao – TP. Bảo Lộc, Lâm Đồng",
@@ -40,7 +36,7 @@ LOCATION_MAPPING = {
     },
 }
 
-# ── Ánh xạ Cây Trồng ───────────────────────────────────────
+# Ánh xạ Cây Trồng
 CROP_MAPPING = {
     "Cà phê Robusta": {
         "variety": "TR4, TR9",
@@ -86,37 +82,29 @@ CROP_MAPPING = {
     },
 }
 
-# ── Gợi ý Cây thay thế theo Vùng Sinh Thái ─────────────────
-# Khi risk_level == 2, hệ thống sẽ gợi ý cây từ bảng này
-# (tự động loại bỏ cây đang bị từ chối)
+# Gợi ý Cây thay thế
 CROP_ALTERNATIVES = {
     "Phường B'Lao": ["Cà phê Robusta", "Sầu riêng Ri6", "Mắc ca"],
     "Phường Xuân Trường": ["Cà phê Arabica", "Chè Ô Long", "Hồng giòn"],
 }
 
-# ── Ngưỡng Rủi ro (Pseudo-Labeling Rules) ──────────────────
-# Dùng cho Feature Engineering và Random Forest Classifier
+# Ngưỡng Rủi ro
 RISK_THRESHOLDS = {
-    # Mức 2 (Nguy hiểm) - Dừng ngay, TỪ CHỐI canh tác
     "durian_max_elevation": 1400,      # Sầu riêng không sống > 1400m
     "frost_temp_celsius": 5.0,         # Nhiệt độ < 5°C → sương muối
     "heavy_rain_mm_per_week": 200,     # Mưa > 200mm/tuần → ngập
-
-    # Mức 1 (Chú ý) - Cảnh báo, cần theo dõi
     "cold_temp_celsius": 10.0,         # Nhiệt 5–10°C → lạnh sâu
     "moderate_rain_mm_per_week": 100,  # Mưa 100–200mm → cần khơi rãnh
 }
 
-# ── Công thức Sụt giảm Năng suất ────────────────────────────
-# Final_Yield = Baseline * (1 - penalty_frost) * (1 - penalty_rain)
+# Công thức Sụt giảm Năng suất
 YIELD_PENALTIES = {
-    "frost_below_5c": 0.40,     # Giảm 40% năng suất khi sương muối
-    "cold_5_to_10c": 0.15,      # Giảm 15% năng suất khi lạnh sâu
-    "heavy_rain_200mm": 0.30,   # Giảm 30% năng suất khi mưa lớn
+    "frost_below_5c": 0.40,
+    "cold_5_to_10c": 0.15,
+    "heavy_rain_200mm": 0.30,
 }
 
-# ── Checklist Hành động (Rule-based, Hardcoded) ─────────────
-# Sinh ra dựa trên điều kiện thời tiết, không dùng LLM
+# Checklist Hành động
 ACTION_CHECKLIST = {
     "heavy_rain": [
         {"action": "Khơi thông rãnh thoát nước", "done": False},
@@ -139,7 +127,7 @@ ACTION_CHECKLIST = {
     ],
 }
 
-# ── Open-Meteo API Config ──────────────────────────────────
+# Open-Meteo API Config
 OPEN_METEO_BASE_URL = "https://archive-api.open-meteo.com/v1/archive"
 WEATHER_VARIABLES = [
     "temperature_2m_max",
@@ -148,3 +136,4 @@ WEATHER_VARIABLES = [
     "relative_humidity_2m_max",
     "wind_speed_10m_max",
 ]
+

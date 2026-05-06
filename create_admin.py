@@ -3,14 +3,13 @@ import sys
 import os
 from pathlib import Path
 
-# Đưa thư mục server vào đầu danh sách tìm kiếm của Python
-# Cách này giúp script luôn tìm thấy database.py và models.py dù bà con chạy từ đâu
+# Đưa thư mục server vào sys.path để import modules
 BASE_DIR = Path(__file__).resolve().parent
 SERVER_DIR = BASE_DIR / "server"
 if str(SERVER_DIR) not in sys.path:
     sys.path.insert(0, str(SERVER_DIR))
 
-# Force UTF-8 encoding for standard output/error to prevent UnicodeEncodeError on Windows
+# Fix encoding cho Windows
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 if hasattr(sys.stderr, 'reconfigure'):

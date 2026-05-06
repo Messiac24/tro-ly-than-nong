@@ -1,15 +1,11 @@
 """
-🌾 AI Dự Báo Kế Hoạch Canh Tác Mùa Vụ & Giá Nông Sản
-Entry point - FastAPI Application
-
-Hệ thống AI hỗ trợ nông dân Lâm Đồng (B'Lao, Xuân Trường)
-dự báo giá, đánh giá rủi ro, và khuyến nghị canh tác.
+Tro Ly Than Nong - API Server
 """
 
 import sys
 import os
 
-# Thêm thư mục hiện tại vào path để import các module local
+# Setup path
 current_dir = os.path.dirname(os.path.abspath(__file__))
 if current_dir not in sys.path:
     sys.path.append(current_dir)
@@ -20,26 +16,21 @@ import models
 from database import engine
 from fastapi.staticfiles import StaticFiles
 
-# Force UTF-8 encoding for standard output/error to prevent UnicodeEncodeError on Windows
+# Encoding fix for Windows
 if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-# ── Khởi tạo ứng dụng ──────────────────────────────────────
 app = FastAPI(
-    title="Trợ Lý Thần Nông - Dự Báo Canh Tác & Giá",
-    description=(
-        "Hệ thống AI dự báo kế hoạch canh tác mùa vụ "
-        "và giá nông sản cho nông dân Lâm Đồng."
-    ),
+    title="Trợ Lý Thần Nông",
     version="1.0.0",
 )
 
-# Khởi tạo database
+# Init db
 models.Base.metadata.create_all(bind=engine)
 
-# Tự động tạo Admin nếu chưa có
+# Default admin
 from database import SessionLocal
 import bcrypt
 def init_admin():
@@ -60,19 +51,18 @@ def init_admin():
             )
             db.add(new_admin)
             db.commit()
-            print("🌾 [System] Đã tạo tài khoản Admin mặc định.")
+            print("System: Created default admin account.")
     except Exception as e:
-        print(f"❌ [Error] Lỗi khởi tạo Admin: {e}")
+        print(f"Error initializing admin: {e}")
     finally:
         db.close()
 
 init_admin()
 
-# ── Cấu hình CORS ──────────────────────────────────────────
-# Cho phép Frontend kết nối (sẽ cập nhật domain cụ thể khi deploy)
+# CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: Thay bằng domain Frontend khi deploy
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -84,19 +74,18 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from routers import predict, chat, auth, admin
 
-# ── Cấu hình Rate Limiting ───────────────────────────────
+# Rate limiting
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# ── Cấu hình Routers ──────────────────────────────────────────
+# Routers
 app.include_router(auth.router)
 app.include_router(predict.router)
 app.include_router(chat.router)
 app.include_router(admin.router)
 
-# ── Phục vụ giao diện Frontend ──────────────────────────────
-# Mount thư mục client để truy cập trực tiếp từ root /
+# Static files
 client_path = os.path.join(os.path.dirname(current_dir), "client")
 if os.path.exists(client_path):
     app.mount("/", StaticFiles(directory=client_path, html=True), name="client")
@@ -104,12 +93,10 @@ if os.path.exists(client_path):
 
 @app.get("/", tags=["Health"])
 async def root():
-    """Chuyển hướng về trang chủ index.html."""
     from fastapi.responses import RedirectResponse
     return RedirectResponse(url="/index.html")
 
 
 @app.get("/health", tags=["Health"])
 async def health_check():
-    """Endpoint kiểm tra sức khỏe hệ thống."""
     return {"status": "healthy"}
