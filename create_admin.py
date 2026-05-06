@@ -15,12 +15,11 @@ if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8')
 
 try:
-    from database import SessionLocal
-    import models
-except ImportError:
-    # Phương án dự phòng nếu sys.path.insert không hiệu quả trong một số môi trường
     from server.database import SessionLocal
     from server import models
+except ImportError:
+    from database import SessionLocal
+    import models
 import bcrypt
 
 def create_admin():
