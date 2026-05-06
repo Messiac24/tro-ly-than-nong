@@ -1,0 +1,91 @@
+version: "2"
+type: frontend
+tech_stack:
+  - HTML
+  - Javascript
+  - TailwindCSS (CDN)
+  - Chart.js
+  - FastAPI (Python)
+  - SQLAlchemy (SQLite)
+  - LangChain
+  - ChromaDB
+routes:
+  - path: /index.html
+    file: client/index.html
+    auth_required: false
+    description: Trang chủ chứa form dự báo và chat AI
+  - path: /login.html
+    file: client/login.html
+    auth_required: false
+    description: Trang chuyển hướng đăng nhập
+  - path: /admin.html
+    file: client/admin.html
+    auth_required: true
+    description: Bảng điều khiển quản trị
+features:
+  - name: Đăng nhập người dùng
+    description: Đăng nhập bằng tên đăng nhập và mật khẩu
+    files:
+      - client/index.html
+      - client/app_v3.js
+      - server/routers/auth.py
+    entry_route: /index.html?auth=login
+    user_interactions:
+      - Nhập tên đăng nhập vào #login-username
+      - Nhập mật khẩu vào #login-password
+      - Nhấn nút "Đăng nhập ngay" (data-testid="login-submit")
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/login
+    auth_required: false
+  - name: Tư vấn tri thức nông nghiệp (RAG Chat)
+    description: Hỏi đáp về kỹ thuật canh tác qua chat widget
+    files:
+      - client/index.html
+      - client/app_v3.js
+      - server/routers/chat.py
+    entry_route: /index.html
+    user_interactions:
+      - Nhấn nút "Hỏi Trợ Lý AI" (#chat-toggle)
+      - Nhập câu hỏi vào #chat-input
+      - Nhấn nút gửi hoặc Enter
+    api_calls:
+      - method: POST
+        endpoint: /api/chat
+    auth_required: false
+  - name: Phân tích dự báo canh tác
+    description: Nhập thông số và nhận phân tích rủi ro, dự báo giá
+    files:
+      - client/index.html
+      - client/app_v3.js
+      - server/routers/predict.py
+    entry_route: /index.html
+    user_interactions:
+      - Chọn vùng trồng (#location-select)
+      - Chọn cây trồng (#crop-select)
+      - Điều chỉnh vốn (#capital-slider)
+      - Nhập diện tích (#area-input)
+      - Nhấn nút "Phân Tích AI" (data-testid="analyze-btn")
+    api_calls:
+      - method: POST
+        endpoint: /api/predict
+    auth_required: false
+  - name: Dashboard Quản trị
+    description: Xem thống kê và quản lý kho tri thức
+    files:
+      - client/admin.html
+      - client/admin.js
+      - server/routers/admin.py
+    entry_route: /admin.html
+    user_interactions:
+      - Xem biểu đồ cơ cấu cây trồng
+      - Xem biểu đồ hoạt động theo vùng
+      - Tải lên file PDF tri thức (#pdf-upload)
+      - Nhấn nút cập nhật tri thức (#btn-reingest)
+    api_calls:
+      - method: GET
+        endpoint: /api/admin/stats
+      - method: POST
+        endpoint: /api/admin/ingest
+    auth_required: true
+known_limitations: []

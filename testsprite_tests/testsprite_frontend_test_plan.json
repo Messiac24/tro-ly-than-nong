@@ -1,0 +1,372 @@
+[
+  {
+    "id": "TC001",
+    "title": "Review a cultivation prediction for selected inputs",
+    "description": "A farmer can choose a region and crop, set capital and area, and see risk plus forecast insights after submitting the analysis.",
+    "category": "Phân tích dự báo canh tác",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Select a growing region"
+      },
+      {
+        "type": "action",
+        "description": "Select a crop type"
+      },
+      {
+        "type": "action",
+        "description": "Adjust the capital amount"
+      },
+      {
+        "type": "action",
+        "description": "Enter a cultivation area"
+      },
+      {
+        "type": "action",
+        "description": "Submit the analysis request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify risk analysis results are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify forecast insights are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Get an agricultural answer from the AI assistant",
+    "description": "A farmer can open the AI chat, ask an agricultural question, and see a grounded answer appear in the conversation thread.",
+    "category": "Tư vấn tri thức nông nghiệp (RAG Chat)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Click the AI assistant chat toggle"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the chat input with a farming question about crop care"
+      },
+      {
+        "type": "action",
+        "description": "Submit the chat message"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an answer appears in the chat thread"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the response is shown as an assistant reply"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Ask a crop-specific technique question and get guidance",
+    "description": "A farmer can ask about a technique for a specific crop and receive relevant cultivation guidance in the chat thread.",
+    "category": "Tư vấn tri thức nông nghiệp (RAG Chat)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Click the AI assistant chat toggle"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the chat input with a question about a cultivation technique for a specific crop"
+      },
+      {
+        "type": "action",
+        "description": "Submit the chat message"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a grounded agricultural guidance response appears"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the conversation thread contains the new answer"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Log in to the admin dashboard and view statistics",
+    "description": "An administrator can sign in, open the dashboard, and see the crop and regional analytics charts loaded.",
+    "category": "Dashboard Quản trị",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the admin dashboard"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the crop composition chart is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the regional activity chart is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Upload a PDF knowledge document and trigger re-ingestion",
+    "description": "An administrator can upload a valid PDF knowledge document, run the knowledge refresh action, and see the ingestion flow complete in the dashboard.",
+    "category": "Dashboard Quản trị",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the admin dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Upload a valid PDF knowledge document"
+      },
+      {
+        "type": "action",
+        "description": "Trigger knowledge re-ingestion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the ingestion completion state is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the dashboard remains accessible after the update"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Keep dashboard analytics visible after knowledge refresh",
+    "description": "An administrator can complete a knowledge update and still return to the dashboard with analytics views available.",
+    "category": "Dashboard Quản trị",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login.html"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the username field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Open the admin dashboard"
+      },
+      {
+        "type": "action",
+        "description": "Upload a valid PDF knowledge document"
+      },
+      {
+        "type": "action",
+        "description": "Trigger knowledge re-ingestion"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the crop composition chart is still displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the regional activity chart is still displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Update prediction inputs before analyzing",
+    "description": "A farmer can change the region, crop, capital, and area inputs and then see the analysis reflect the updated choices.",
+    "category": "Phân tích dự báo canh tác",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Select a growing region"
+      },
+      {
+        "type": "action",
+        "description": "Select a crop type"
+      },
+      {
+        "type": "action",
+        "description": "Adjust the capital amount"
+      },
+      {
+        "type": "action",
+        "description": "Enter a cultivation area"
+      },
+      {
+        "type": "action",
+        "description": "Change the selected region"
+      },
+      {
+        "type": "action",
+        "description": "Change the selected crop"
+      },
+      {
+        "type": "action",
+        "description": "Submit the analysis request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify updated analysis results are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify ROI and ecological risk insights are shown"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC008",
+    "title": "Send a chat question with Enter",
+    "description": "A farmer can submit a chat question using the keyboard and see the assistant response appear in the thread.",
+    "category": "Tư vấn tri thức nông nghiệp (RAG Chat)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Click the AI assistant chat toggle"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the chat input with a farming question"
+      },
+      {
+        "type": "action",
+        "description": "Press Enter"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a new assistant response appears in the chat thread"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC009",
+    "title": "Open and close the AI chat panel",
+    "description": "A farmer can expand the assistant chat panel and close it again without losing access to the rest of the page.",
+    "category": "Tư vấn tri thức nông nghiệp (RAG Chat)",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Click the AI assistant chat toggle"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the chat panel is visible"
+      },
+      {
+        "type": "action",
+        "description": "Click the AI assistant chat toggle again"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the chat panel is hidden"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC010",
+    "title": "See validation when prediction inputs are incomplete",
+    "description": "A farmer who tries to analyze without completing the required cultivation inputs sees validation feedback and no result is generated.",
+    "category": "Phân tích dự báo canh tác",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /index.html"
+      },
+      {
+        "type": "action",
+        "description": "Leave the required prediction inputs empty"
+      },
+      {
+        "type": "action",
+        "description": "Submit the analysis request"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify input validation feedback is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify no prediction result is displayed"
+      }
+    ],
+    "priority": "Low"
+  }
+]

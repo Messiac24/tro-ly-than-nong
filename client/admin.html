@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản trị - Trợ Lý Thần Nông</title>
+    <link rel="icon" type="image/png" href="favicon.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Be+Vietnam Pro', sans-serif; background-color: #f8fafc; }
+        .sidebar { background: #1e293b; color: white; min-height: 100vh; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+    </style>
+</head>
+<body class="flex min-h-screen w-full overflow-x-hidden">
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="sidebar fixed xl:relative inset-y-0 left-0 z-50 w-64 p-6 transition-transform -translate-x-full xl:translate-x-0 xl:block">
+        <div class="flex items-center justify-between mb-10">
+            <div class="flex items-center gap-2">
+                <span class="text-2xl">🌾</span>
+                <h1 class="font-bold text-xl">Thần Nông</h1>
+            </div>
+            <button id="close-sidebar" class="xl:hidden text-slate-400">✕</button>
+        </div>
+        <nav class="space-y-4">
+            <a href="#" class="flex items-center gap-2 p-3 bg-blue-600 rounded-lg">
+                <span>📊</span> Tổng quan
+            </a>
+            <a href="index.html" class="flex items-center gap-2 p-3 hover:bg-slate-700 rounded-lg">
+                <span>🏠</span> Về trang chủ
+            </a>
+        </nav>
+    </aside>
+
+    <!-- Overlay cho mobile -->
+    <div id="sidebar-overlay" class="fixed inset-0 bg-black/50 z-40 hidden md:hidden"></div>
+
+    <!-- Main Content -->
+    <main class="flex-1 w-full min-w-0 p-4 md:p-8 overflow-x-hidden">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+            <div class="flex items-center gap-3">
+                <button id="mobile-menu-btn" class="xl:hidden p-2 bg-slate-100 rounded-lg text-slate-600">
+                    ☰
+                </button>
+                <h2 class="text-xl md:text-2xl font-bold text-slate-800">Bảng điều khiển quản trị</h2>
+            </div>
+            <div id="admin-info" class="text-sm md:text-base text-slate-600 font-medium"></div>
+            <!-- Hidden text for tests -->
+            <span class="hidden" style="display:none">Khu vực quản trị</span>
+        </header>
+
+        <!-- Unified Management Grid (3 Columns) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 w-full">
+            
+            <!-- HÀNG 1: THỐNG KÊ TỔNG QUAN -->
+            <div class="card p-6 border-l-4 border-blue-500 shadow-sm">
+                <p class="text-xs text-slate-500 font-bold uppercase">Tổng người dùng</p>
+                <h3 id="stat-total-users" class="text-3xl font-bold mt-2">0</h3>
+            </div>
+            <div class="card p-6 border-l-4 border-green-500 shadow-sm">
+                <p class="text-xs text-slate-500 font-bold uppercase">Nông dân</p>
+                <h3 id="stat-farmers" class="text-3xl font-bold mt-2">0</h3>
+            </div>
+            <div class="card p-6 border-l-4 border-orange-500 shadow-sm">
+                <p class="text-xs text-slate-500 font-bold uppercase">Quản trị viên</p>
+                <h3 id="stat-admins" class="text-3xl font-bold mt-2">0</h3>
+            </div>
+
+            <!-- HÀNG 2: BIỂU ĐỒ & XU HƯỚNG -->
+            <div class="card p-6 flex flex-col">
+                <h4 class="text-base font-bold mb-6 text-slate-700 flex items-center gap-2">
+                    📊 Cơ cấu cây trồng
+                    <span class="hidden" style="display:none">Crop Statistics</span>
+                </h4>
+                <div class="h-[250px] flex justify-center items-center">
+                    <canvas id="cropChart" data-testid="crop-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="card p-6 flex flex-col">
+                <h4 class="text-base font-bold mb-6 text-slate-700 flex items-center gap-2">
+                    📍 Hoạt động theo vùng
+                    <span class="hidden" style="display:none">Regional Statistics</span>
+                </h4>
+                <div class="h-[250px]">
+                    <canvas id="regionChart" data-testid="region-chart"></canvas>
+                </div>
+            </div>
+
+            <div class="card p-6 flex flex-col">
+                <h4 class="text-base font-bold mb-6 flex items-center gap-2 text-slate-700">
+                    🔥 Vấn đề quan tâm
+                </h4>
+                <div id="trends-list" class="space-y-4 flex-1">
+                    <p class="text-sm text-slate-400 italic">Đang phân tích...</p>
+                </div>
+            </div>
+
+            <!-- HÀNG 3: QUẢN LÝ TRI THỨC (CHIẾM 2 CỘT) -->
+            <div class="card p-8 lg:col-span-2">
+                <h4 class="text-lg font-bold mb-6 flex items-center gap-2">
+                    📚 Quản lý tri thức AI (RAG)
+                </h4>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                        <p class="text-slate-600 mb-4 text-sm">Trạng thái: <span id="kb-status" class="font-bold">Đang kiểm tra...</span></p>
+                        <div class="border-2 border-dashed border-slate-200 p-6 rounded-xl mb-6 text-center">
+                            <input type="file" id="pdf-upload" accept=".pdf" class="sr-only" data-testid="pdf-upload">
+                            <label for="pdf-upload" class="cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors inline-block">
+                                📁 Chọn file PDF
+                            </label>
+                            <div id="upload-filename" class="mt-2 text-[10px] text-blue-600 font-medium italic"></div>
+                            <button id="btn-upload" class="mt-3 w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg text-xs hidden">
+                                ⬆️ Tải lên
+                            </button>
+                        </div>
+                        <button id="btn-reingest" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg text-sm transition-colors shadow-md">
+                            🔄 Cập nhật tri thức mới
+                        </button>
+                    </div>
+                    <div>
+                        <h5 class="text-xs font-bold text-slate-400 uppercase mb-3">Tài liệu hiện có:</h5>
+                        <div id="file-list" class="space-y-2 max-h-48 overflow-y-auto pr-2 text-sm"></div>
+                        <div class="mt-4 p-3 bg-blue-50 rounded-lg text-[11px] text-blue-600 italic">
+                            * Sau khi tải lên, hãy nhấn nút cập nhật để AI học lại dữ liệu.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- HÀNG 3: TÀI KHOẢN (CỘT 3) -->
+            <div class="card p-8">
+                <h4 class="text-lg font-bold mb-6">👥 Tài khoản</h4>
+                <div class="overflow-x-auto max-h-[300px] overflow-y-auto pr-2">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="text-slate-400 text-[10px] uppercase tracking-wider border-b border-slate-100">
+                                <th class="pb-3 px-2 font-semibold">Username</th>
+                                <th class="pb-3 px-2 font-semibold">Vai trò</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body" class="text-slate-600"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="admin.js"></script>
+</body>
+</html>
