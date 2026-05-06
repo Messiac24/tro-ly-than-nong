@@ -17,8 +17,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY server/ ./server/
 COPY client/ ./client/
 
-RUN mkdir -p /app/server/data
+# Tạo thư mục data để lưu SQLite
+RUN mkdir -p /app/server/data && chmod 777 /app/server/data
 
-# Quan trọng: Không dùng EXPOSE cố định, Render sẽ tự quản lý
-# Dùng shell form cho CMD để nhận được biến môi trường $PORT
-CMD uvicorn server.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Hugging Face Spaces mặc định dùng port 7860
+ENV PORT=7860
+EXPOSE 7860
+
+# Chạy server
+CMD uvicorn server.main:app --host 0.0.0.0 --port 7860
