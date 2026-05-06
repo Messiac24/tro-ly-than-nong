@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./server/data:/app/server/data
+    environment:
+      - SECRET_KEY=nong-san-bi-mat-2026
+      - DATABASE_URL=sqlite:///./server/data/nongsan.db
+    restart: always
+
+  frontend:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./client:/usr/share/nginx/html
+    restart: always

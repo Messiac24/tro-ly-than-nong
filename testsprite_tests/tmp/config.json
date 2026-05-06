@@ -1,0 +1,21 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:8000",
+  "loginUser": "admin",
+  "loginPassword": "admin123",
+  "executionArgs": {
+    "projectName": "AI_nong_san",
+    "projectPath": "d:\\AI_nong_san",
+    "testIds": [
+      "TC005"
+    ],
+    "additionalInstruction": "For TC005, you must strictly follow these implementation details to avoid timeouts and errors:\n1. Navigate to 'http://127.0.0.1:8000/login.html'.\n2. Fill login form using robust CSS selectors: locator('#login-username').fill('admin') and locator('#login-password').fill('admin123'). Click submit: locator('#login-form button[type=\"submit\"]').click(). Wait 2 seconds.\n3. Navigate to 'http://127.0.0.1:8000/admin.html'.\n4. Setup a dialog handler to accept alerts: `async def handle_dialog(dialog): await dialog.accept()`. Attach it: `frame.on('dialog', handle_dialog)`. DO NOT print the dialog message to avoid Windows UnicodeEncodeError.\n5. Upload the PDF file exactly like this: `await frame.locator('#pdf-upload').set_input_files('test_documents/sample.pdf')`.\n6. Click upload: `await frame.locator('#btn-upload').click(force=True)`. Wait 3 seconds.\n7. Click reingest: `await frame.locator('#btn-reingest').click(force=True)`. Wait 3 seconds.\n8. Assert the dashboard is visible without relying on the dialog messages.",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-yNe4Zuu9fzt1lGOsrQuGGfCEbwZdlkLuGEpSWCm_G4RoQ061uKN1vIfCEorOj3XH8Z3sK2tzFaJdMkhGBwcmWChuc9y4HP5833W2utbBP6vbJv2TUWyklP04uZUw02N2Ajg"
+    }
+  },
+  "serverPort": 59870
+}
