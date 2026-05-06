@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "name": "ai-nong-san",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/client/$1"
+    }
+  ]
+}
