@@ -1,3 +1,13 @@
+---
+title: Tro Ly Than Nong
+emoji: 🌾
+colorFrom: green
+colorTo: yellow
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🌾 Trợ Lý Thần Nông (Agricultural AI Assistant)
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/downloads/)
