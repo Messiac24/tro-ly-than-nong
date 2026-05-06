@@ -1,23 +1,30 @@
 # ── Stage 1: Build/Run ──
 FROM python:3.11-slim
 
+# Tạo User mới theo yêu cầu của Hugging Face
+RUN useradd -m -u 1000 user
+USER user
+ENV PATH="/home/user/.local/bin:$PATH"
+
 WORKDIR /app
 
-# Cài đặt các thư viện hệ thống cần thiết
+# Cài đặt các thư viện hệ thống cần thiết (phải dùng quyền root tạm thời)
+USER root
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     && rm -rf /var/lib/apt/lists/*
+USER user
 
 # Copy requirements và cài đặt dependencies
-COPY server/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY --chown=user server/requirements.txt .
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
 # Copy toàn bộ mã nguồn
-COPY server/ ./server/
-COPY client/ ./client/
+COPY --chown=user server/ ./server/
+COPY --chown=user client/ ./client/
 
-# Tạo thư mục data để lưu SQLite
+# Tạo thư mục data
 RUN mkdir -p /app/server/data && chmod 777 /app/server/data
 
 # Hugging Face Spaces mặc định dùng port 7860
