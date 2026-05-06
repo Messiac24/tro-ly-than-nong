@@ -24,12 +24,8 @@
 </head>
 <body class="bg-cream min-h-screen font-body text-dark">
 
-    <!-- ═══════════════════════════════════════════════════ -->
-    <!-- MAIN LAYOUT: Form (Left 25%) + Dashboard (Right 75%) -->
-    <!-- ═══════════════════════════════════════════════════ -->
     <div class="app-container is-empty" id="app-container">
         
-        <!-- ── USER HEADER: Menu Dropdown 3 gạch ────────── -->
         <header class="user-header hidden" id="user-header">
             <button id="user-menu-toggle" class="user-menu-btn" aria-label="Mở menu người dùng">
                 <span class="user-avatar">👤</span>
@@ -43,28 +39,24 @@
                 </div>
                 <hr class="dropdown-divider">
                 <a href="admin.html" id="admin-link" class="dropdown-item hidden">
-                    🛠️ Dashboard Quản trị
+                    Dashboard Quản trị
                 </a>
                 <button id="logout-btn" class="dropdown-item text-danger">
-                    🚪 Đăng xuất
+                    Đăng xuất
                 </button>
             </div>
         </header>
 
-        <!-- ── PANEL TRÁI: Form Nhập Tham Số ────────────── -->
         <aside class="form-panel" id="form-panel" aria-label="Khu vực nhập thông số canh tác">
             <div class="form-inner">
-                <!-- Logo & Tiêu đề -->
                 <header class="form-header">
                     <div class="logo-icon">🌾</div>
                     <h1 class="form-title">Trợ Lý Thần Nông</h1>
                     <p class="form-subtitle">Dự báo canh tác & giá nông sản</p>
                 </header>
 
-                <!-- Form Controls -->
                 <form id="predict-form" class="form-controls" aria-label="Form nhập thông số phân tích" novalidate>
 
-                    <!-- Dropdown: Vùng trồng -->
                     <div class="form-group">
                         <label for="location-select" class="form-label">
                             📍 Vùng trồng
@@ -76,7 +68,6 @@
                         </select>
                     </div>
 
-                    <!-- Dropdown: Cây trồng -->
                     <div class="form-group">
                         <label for="crop-select" class="form-label">
                             🌱 Cây trồng
@@ -90,7 +81,6 @@
                         </select>
                     </div>
 
-                    <!-- Radio: Trạng thái canh tác -->
                     <div class="form-group">
                         <label class="form-label">
                             🚜 Trạng thái canh tác
@@ -107,7 +97,6 @@
                         </div>
                     </div>
 
-                    <!-- Slider: Ngân sách khả dụng -->
                     <div class="form-group">
                         <label for="capital-slider" class="form-label">
                             💰 Ngân sách khả dụng <span class="text-xs text-muted font-normal">(Tối đa 10 tỷ)</span>
@@ -129,7 +118,6 @@
                         </div>
                     </div>
 
-                    <!-- Input: Diện tích canh tác -->
                     <div class="form-group">
                         <label for="area-input" class="form-label">
                             📐 Diện tích canh tác <span class="text-xs text-muted font-normal">(Tối đa 50 ha)</span>
@@ -152,23 +140,21 @@
                         </div>
                     </div>
 
-                    <!-- Nút Phân Tích AI -->
                     <button
                         type="submit"
                         id="submit-btn"
                         class="btn-analyze"
-                        aria-label="Phân tích AI"
+                        aria-label="Phân tích hệ thống"
                     >
-                        <span class="btn-text" id="btn-text" data-testid="analyze-btn">🔍 Phân Tích AI</span>
+                        <span class="btn-text" id="btn-text" data-testid="analyze-btn">🔍 Phân Tích Hệ Thống</span>
                         <span class="btn-spinner hidden" id="btn-spinner">
                             <svg class="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
                             </svg>
-                            <span>Đang phân tích...</span>
+                            <span>Đang xử lý...</span>
                         </span>
                     </button>
-                    <!-- Hidden validation msg for TC015 -->
                     <div id="test-validation-msg" class="hidden" style="display:none">Vui lòng nhập</div>
                 </form>
 
@@ -176,10 +162,8 @@
             </div>
         </aside>
 
-        <!-- ── PANEL PHẢI: Dashboard Kết Quả ────────────── -->
         <main class="dashboard-panel" id="dashboard-panel" aria-label="Khu vực hiển thị kết quả phân tích">
 
-            <!-- Banner Lỗi (ẩn mặc định) -->
             <div class="error-banner hidden" id="error-banner" role="alert">
                 <span class="error-icon">⚠️</span>
                 <span class="error-message" id="error-message"></span>
@@ -187,23 +171,17 @@
             </div>
 
 
-            <!-- Kết quả phân tích (ẩn mặc định) -->
             <div class="results-container hidden" id="results-container">
 
-                <!-- Hàng 1: Card Địa Hình + Hộp Khuyến Nghị -->
                 <div class="results-row-1">
-                    <!-- Card Địa Hình -->
                     <div class="card location-card" id="location-card">
                         <h3 class="card-title">📍 Thông tin vùng</h3>
                         <div class="location-details" id="location-details">
-                            <!-- JS sẽ render: tên vùng, độ cao, nhiệt độ, mưa -->
                         </div>
                     </div>
 
-                    <!-- Hộp Khuyến Nghị AI (Điểm nhấn chính) -->
                     <div class="card recommendation-box" id="recommendation-box" aria-live="polite" aria-atomic="true">
                         <div class="rec-content-wrapper flex flex-col md:flex-row gap-6">
-                            <!-- Left Column: Recommendation -->
                             <div class="rec-main-info flex-1">
                                 <div class="rec-header" id="rec-header">
                                     <span class="rec-icon" id="rec-icon"></span>
@@ -213,36 +191,30 @@
                                 <p class="rec-trend" id="rec-trend"></p>
                                 <p class="rec-decision" id="rec-decision"></p>
                                 
-                                <!-- Checklist hành động -->
                                 <div class="rec-checklist mt-4" id="rec-checklist">
                                     <h4 class="checklist-title">📋 Việc cần làm:</h4>
                                     <ul class="checklist-list" id="checklist-list">
-                                        <!-- JS render từ API response -->
                                     </ul>
                                 </div>
 
-                                <!-- Gợi ý cây thay thế (chỉ hiện khi risk == 2) -->
                                 <div class="rec-alternatives hidden mt-4" id="rec-alternatives">
                                     <h4 class="alternatives-title">🌱 Gợi ý chuyển đổi cây trồng:</h4>
                                     <div class="alternatives-tags" id="alternatives-tags">
-                                        <!-- JS render tags clickable -->
                                     </div>
                                 </div>
 
-                                <!-- Cảnh báo giá vật tư -->
                                 <div class="rec-fertilizer mt-4 hidden bg-orange-50 border border-orange-200 p-3 rounded-lg" id="rec-fertilizer">
                                     <h4 class="fertilizer-title text-orange-700 font-bold mb-1 flex items-center gap-2">
-                                        ⚠️ Cảnh báo Giá Vật Tư:
+                                        ⚠️ Cảnh báo giá vật tư:
                                     </h4>
                                     <p class="fertilizer-text text-sm leading-relaxed text-orange-900" id="fertilizer-text"></p>
                                 </div>
 
                             </div>
 
-                            <!-- Right Column: AI Reasoning -->
                             <div class="rec-reasoning-panel flex-1 bg-white bg-opacity-60 p-4 rounded-lg border border-leaf/20">
                                 <h4 class="reasoning-title text-primary font-bold mb-2 flex items-center gap-2">
-                                    💡 Vì sao AI đưa ra kết luận này?
+                                    💡 Cơ sở phân tích:
                                 </h4>
                                 <p class="reasoning-text text-sm leading-relaxed" id="reasoning-text"></p>
                             </div>
@@ -250,23 +222,19 @@
                     </div>
                 </div>
 
-                <!-- Hàng 2: Grid 3 Biểu đồ -->
                 <div class="results-row-2">
-                    <!-- Biểu đồ 1: Thời tiết -->
                     <div class="card chart-card chart-large">
                         <h3 class="card-title">🌤️ Thời tiết & Khí hậu</h3>
                         <div class="chart-wrapper" id="weather-chart-wrapper">
                             <canvas id="weather-chart" aria-label="Biểu đồ thời tiết 14 ngày"></canvas>
-                            <!-- Overlay: Không có dữ liệu -->
                             <div class="chart-overlay hidden" id="weather-overlay">
                                 <span>📊 Dữ liệu đang được cập nhật</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Biểu đồ 2: Dự báo giá -->
                     <div class="card chart-card chart-small">
-                        <h3 class="card-title">📈 Dự báo giá AI</h3>
+                        <h3 class="card-title">📈 Dự báo giá</h3>
                         <div class="chart-wrapper" id="price-chart-wrapper">
                             <canvas id="price-chart" aria-label="Biểu đồ dự báo giá 30 ngày"></canvas>
                             <div class="chart-overlay hidden" id="price-overlay">
@@ -275,7 +243,6 @@
                         </div>
                     </div>
 
-                    <!-- Biểu đồ 3: Phân tích tài chính -->
                     <div class="card chart-card chart-small">
                         <h3 class="card-title">💰 Phân tích tài chính</h3>
                         <div class="chart-wrapper" id="finance-chart-wrapper">
@@ -290,7 +257,6 @@
         </main>
     </div>
 
-    <!-- ── Floating Button (Mobile) ────────────────────── -->
     <button
         class="floating-btn hidden"
         id="floating-btn"
@@ -300,15 +266,12 @@
         📝
     </button>
 
-    <!-- ── Chat Widget (AI Assistant) ────────────────── -->
     <div id="chat-widget" class="chat-widget closed">
-        <!-- Nút mở Chat -->
         <button id="chat-toggle" class="chat-toggle" aria-label="Mở Trợ Lý Thần Nông">
             <span class="chat-toggle-icon">💬</span>
-            <span class="chat-toggle-text">Hỏi Trợ Lý AI</span>
+            <span class="chat-toggle-text">Hỏi Hệ Thống</span>
         </button>
 
-        <!-- Cửa sổ Chat -->
         <div id="chat-window" class="chat-window">
             <header class="chat-header">
                 <div class="chat-header-info">
@@ -322,15 +285,12 @@
             </header>
 
             <div id="chat-messages" class="chat-messages">
-                <!-- Tin nhắn mặc định -->
                 <div class="message assistant">
-                    Chào bà con! Tôi là Trợ Lý Thần Nông. Bà con cần hỏi về kỹ thuật trồng trọt hay tính toán tiền nong cứ hỏi tôi nhé!
+                    Chào bạn! Tôi là hệ thống hỗ trợ nông nghiệp. Bạn cần tìm hiểu về kỹ thuật hay giá cả nông sản không?
                 </div>
             </div>
 
-            <!-- Gợi ý câu hỏi nhanh -->
             <div id="chat-suggestions" class="chat-suggestions">
-                <!-- JS render suggestions here -->
             </div>
 
             <form id="chat-form" class="chat-input-area">
@@ -342,7 +302,6 @@
         </div>
     </div>
 
-    <!-- ── Auth Modal (Login/Register) ──────────────── -->
     <div id="auth-modal" class="auth-modal">
         <div class="auth-card">
             <div class="auth-tabs">
@@ -350,9 +309,8 @@
                 <button class="auth-tab" id="tab-register">Đăng ký</button>
             </div>
 
-            <!-- Form Đăng nhập -->
             <form id="login-form" class="auth-form">
-                <h2 class="auth-title">Chào bà con quay lại! 🌾</h2>
+                <h2 class="auth-title">Chào mừng bạn quay lại! 🌾</h2>
                 <div class="form-group">
                     <label class="form-label">Tên đăng nhập</label>
                     <input type="text" id="login-username" class="form-input" placeholder="Ví dụ: nongdan01" data-testid="login-username" required>
@@ -361,12 +319,11 @@
                     <label class="form-label">Mật khẩu</label>
                     <input type="password" id="login-password" class="form-input" placeholder="••••••••" data-testid="login-password" required>
                 </div>
-                <button type="submit" class="btn-auth" data-testid="login-submit">Đăng nhập ngay</button>
+                <button type="submit" class="btn-auth" data-testid="login-submit">Đăng nhập</button>
             </form>
 
-            <!-- Form Đăng ký -->
             <form id="register-form" class="auth-form hidden">
-                <h2 class="auth-title">Tham gia cùng Thần Nông 🚜</h2>
+                <h2 class="auth-title">Đăng ký tài khoản 🚜</h2>
                 <div class="form-group">
                     <label class="form-label">Họ và tên</label>
                     <input type="text" id="reg-name" class="form-input" placeholder="Nguyễn Văn A" required>
@@ -383,12 +340,13 @@
                     <label class="form-label">Mật khẩu</label>
                     <input type="password" id="reg-password" class="form-input" placeholder="••••••••" required>
                 </div>
-                <button type="submit" class="btn-auth">Đăng ký tài khoản</button>
+                <button type="submit" class="btn-auth">Đăng ký</button>
             </form>
             
             <p id="auth-error" class="auth-error-msg hidden"></p>
         </div>
     </div>
+
 
     <!-- JavaScript -->
     <script src="app_v3.js"></script>
