@@ -1,6 +1,12 @@
 from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from database import Base
+try:
+    from .database import Base
+except ImportError:
+    try:
+        from server.database import Base
+    except ImportError:
+        from database import Base
 import datetime
 
 class User(Base):

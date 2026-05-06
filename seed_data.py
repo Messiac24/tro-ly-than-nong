@@ -11,11 +11,13 @@ if str(SERVER_DIR) not in sys.path:
     sys.path.insert(0, str(SERVER_DIR))
 
 try:
-    from database import SessionLocal, engine
-    import models
-except ImportError:
+    # Thử import theo kiểu package (giúp Linter/VS Code nhận diện đúng)
     from server.database import SessionLocal, engine
     from server import models
+except ImportError:
+    # Fallback cho các môi trường chạy trực tiếp từ thư mục server
+    from database import SessionLocal, engine
+    import models
 import bcrypt
 
 def get_password_hash(password):
