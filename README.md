@@ -4,55 +4,20 @@ emoji: 🌾
 colorFrom: green
 colorTo: yellow
 sdk: docker
-app_port: 7860
 pinned: false
+app_port: 7860
 ---
 
-# 🌾 Trợ Lý Thần Nông (Agricultural Assistant)
+# Trợ Lý Thần Nông - Agricultural AI Assistant
 
-Hệ thống hỗ trợ nông nghiệp kết hợp **RAG (Retrieval-Augmented Generation)** và **Expert Rules** để cung cấp hướng dẫn canh tác và quản lý rủi ro cho khu vực Lâm Đồng.
+Hệ thống hỗ trợ nông nghiệp tích hợp AI cho bà con Lâm Đồng.
 
-## Tính năng chính
+## Tính năng chính:
+- Dự báo giá nông sản (Cà phê, Sầu riêng, Chè).
+- Đánh giá rủi ro thiên tai và sâu bệnh.
+- Chatbot tư vấn kỹ thuật canh tác dựa trên tri thức nội bộ.
 
-- **Tư vấn dựa trên tài liệu (RAG)**: Truy xuất thông tin từ các sổ tay kỹ thuật (PDF) để trả lời câu hỏi của nông dân.
-- **Hệ thống luật chuyên gia**: Cảnh báo rủi ro sinh thái dựa trên cao độ, thổ nhưỡng và thời tiết.
-- **Dự báo giá**: Sử dụng ML (XGBoost/TFT) để giả lập ROI và dự báo xu hướng giá nông sản.
-- **Quản lý tri thức**: Dashboard cho phép upload PDF để cập nhật kiến thức cho hệ thống.
-
-## Công nghệ sử dụng
-
-- **Backend**: FastAPI, SQLAlchemy (SQLite), LangChain.
-- **AI Core**: Gemini 1.5 Flash / 2.0 (qua Google AI hoặc OpenRouter).
-- **Vector DB**: ChromaDB.
-- **Frontend**: Vanilla JS, TailwindCSS, Chart.js.
-- **Deployment**: Docker, Nginx.
-
-## Cài đặt nhanh
-
-### Chạy bằng Docker
-```bash
-git clone https://github.com/Messiac24/tro-ly-than-nong.git
-cd tro-ly-than-nong
-docker-compose up -d --build
-```
-
-### Sử dụng API
-Hệ thống cung cấp Swagger UI tại `http://localhost:8000/docs`.
-
-Ví dụ gọi API tư vấn:
-```python
-import requests
-
-payload = {"question": "Kỹ thuật bón phân sầu riêng mùa mưa?"}
-res = requests.post("http://localhost:8000/api/chat", json=payload)
-print(res.json()["answer"])
-```
-
-## Lưu ý kỹ thuật
-- Hệ thống ưu tiên dữ liệu từ RAG để đảm bảo tính chính xác.
-- Hỗ trợ đổi model linh hoạt qua cấu hình API Key (Gemini/OpenRouter).
-- Dữ liệu hội thoại được lưu local tại SQLite.
-
----
-**Phát triển bởi [Messiac24](https://github.com/Messiac24)**
-
+## Lưu ý cho Hugging Face:
+Vui lòng cấu hình các biến môi trường sau trong phần **Settings -> Variables and Secrets**:
+- `OPENROUTER_API_KEY`: API Key để sử dụng Chatbot AI.
+- `SECRET_KEY`: Khóa bí mật cho JWT.

@@ -1,35 +1,34 @@
-# ── Stage 1: Build/Run ──
-FROM python:3.11-slim
+# Use an official Python runtime as a parent image
+FROM python:3.10-slim
 
-# Tạo User mới theo yêu cầu của Hugging Face
-RUN useradd -m -u 1000 user
-USER user
-ENV PATH="/home/user/.local/bin:$PATH"
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV HF_HUB_DISABLE_SYMLINKS_WARNING=1
 
+# Set work directory
 WORKDIR /app
 
-# Cài đặt các thư viện hệ thống cần thiết (phải dùng quyền root tạm thời)
-USER root
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
+    software-properties-common \
+    git \
     && rm -rf /var/lib/apt/lists/*
-USER user
 
-# Copy requirements và cài đặt dependencies
-COPY --chown=user server/requirements.txt .
-RUN pip install --no-cache-dir --upgrade -r requirements.txt
+# Copy requirements and install
+COPY server/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy toàn bộ mã nguồn
-COPY --chown=user server/ ./server/
-COPY --chown=user client/ ./client/
+# Copy the rest of the application
+COPY . .
 
-# Tạo thư mục data
-RUN mkdir -p /app/server/data && chmod 777 /app/server/data
+# Set working directory to server for running the app
+WORKDIR /app/server
 
-# Hugging Face Spaces mặc định dùng port 7860
-ENV PORT=7860
+# Expose the port Hugging Face expects
 EXPOSE 7860
 
-# Chạy server
-CMD uvicorn server.main:app --host 0.0.0.0 --port 7860
+# Command to run the application
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "7860"]
