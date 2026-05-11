@@ -54,7 +54,12 @@ def train_xgboost(df, crop_name, model_dir):
     model.fit(X_train, y_train, verbose=False)
     
     # Lưu mô hình
-    model_filename = f"xgb_{crop_name.lower().replace(' ', '_').replace('ê', 'e').replace('ô', 'o')}.pkl"
+    import unicodedata
+    def strip_accents(s):
+        return ''.join(c for c in unicodedata.normalize('NFD', s) if unicodedata.category(c) != 'Mn')
+    
+    clean_name = strip_accents(crop_name).lower().replace(' ', '_').replace('đ', 'd')
+    model_filename = f"xgb_{clean_name}.pkl"
     model_path = os.path.join(model_dir, model_filename)
     joblib.dump(model, model_path)
     print(f"Đã lưu mô hình XGBoost tại: {model_path}")
@@ -157,8 +162,12 @@ if __name__ == "__main__":
     model_dir = os.path.join(base_dir, "ai_models")
     
     # Huấn luyện XGBoost cho Sầu riêng & Chè
+    file_map = {
+        "Sầu riêng Ri6": "processed_durian_ri6.csv",
+        "Chè Ô Long": "processed_oolong.csv"
+    }
     for crop in ["Sầu riêng Ri6", "Chè Ô Long"]:
-        file_name = f"processed_{crop.lower().replace(' ', '_').replace('ê', 'e').replace('ô', 'o')}.csv"
+        file_name = file_map[crop]
         file_path = os.path.join(data_dir, file_name)
         if os.path.exists(file_path):
             df = pd.read_csv(file_path)
