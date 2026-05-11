@@ -29,6 +29,24 @@ CROP_FILE_MAP = {
 import torch
 from pytorch_forecasting import TimeSeriesDataSet, TemporalFusionTransformer
 
+# --- FIX: Bản vá cho lỗi StringDtype khi unpickle mô hình ---
+import pandas as pd
+try:
+    from pandas.api.types import StringDtype
+    def _fix_string_dtype_unpickle():
+        import pandas._libs.arrays as pandas_arrays
+        # Đảm bảo StringDtype có thể nhận thêm đối số nếu cần (tùy phiên bản)
+        original_init = StringDtype.__init__
+        def patched_init(self, *args, **kwargs):
+            if len(args) > 1: # Nếu có dư đối số (lỗi 3 đối số)
+                args = args[:1]
+            return original_init(self, *args, **kwargs)
+        StringDtype.__init__ = patched_init
+    _fix_string_dtype_unpickle()
+except Exception:
+    pass
+# -----------------------------------------------------------
+
 # Đường dẫn tới thư mục chứa models
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MODEL_DIR = os.path.join(BASE_DIR, "ai_models")
