@@ -200,4 +200,3 @@ async def get_chat_history(current_user: models.User = Depends(get_current_user)
         models.ChatHistory.user_id == current_user.id
     ).order_by(models.ChatHistory.created_at.asc()).limit(50).all()
     return history
-
