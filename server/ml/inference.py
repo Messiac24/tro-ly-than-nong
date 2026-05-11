@@ -4,6 +4,15 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 import sys
+import warnings
+
+# Ẩn các cảnh báo lệch phiên bản thư viện để làm sạch Log
+warnings.filterwarnings("ignore", category=UserWarning)
+try:
+    from sklearn.exceptions import InconsistentVersionWarning
+    warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
+except ImportError:
+    pass
 
 # Thêm thư mục server vào sys.path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

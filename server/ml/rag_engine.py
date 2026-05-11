@@ -2,7 +2,7 @@ import os
 import re
 from dotenv import load_dotenv
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_community.vectorstores import Chroma
+from langchain_chroma import Chroma
 
 # Load environment variables
 load_dotenv()
