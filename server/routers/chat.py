@@ -43,14 +43,14 @@ if API_KEY_VAL:
         )
     else:
         llm = ChatOpenAI(
-            model="google/gemini-flash-1.5",
+            model="google/gemini-2.0-flash-exp:free",
             openai_api_key=API_KEY_VAL,
             base_url="https://openrouter.ai/api/v1",
             temperature=0.3,
             max_tokens=1024,
             default_headers={
                 "HTTP-Referer": "http://localhost:8000",
-                "X-Title": "Tro Ly Than Nong",
+                "X-OpenRouter-Title": "Tro Ly Than Nong",
             }
         )
 
