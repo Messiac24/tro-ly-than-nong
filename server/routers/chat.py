@@ -28,7 +28,7 @@ router = APIRouter(
 )
 
 API_KEY_VAL = os.getenv("GOOGLE_API_KEY") or os.getenv("OPENROUTER_API_KEY")
-CHAT_MODEL = "google/gemini-flash-1.5"
+CHAT_MODEL = "openai/gpt-4o-mini"
 
 llm = None
 
@@ -38,14 +38,16 @@ if API_KEY_VAL:
         llm = ChatGoogleGenerativeAI(
             model="gemini-1.5-flash",
             google_api_key=API_KEY_VAL,
-            temperature=0.3
+            temperature=0.3,
+            max_output_tokens=1024
         )
     else:
         llm = ChatOpenAI(
-            model=CHAT_MODEL,
+            model="google/gemini-flash-1.5",
             openai_api_key=API_KEY_VAL,
-            openai_api_base="https://openrouter.ai/api/v1",
+            base_url="https://openrouter.ai/api/v1",
             temperature=0.3,
+            max_tokens=1024,
             default_headers={
                 "HTTP-Referer": "http://localhost:8000",
                 "X-Title": "Tro Ly Than Nong",
@@ -86,29 +88,41 @@ async def _get_rag_response(query: str) -> str:
     if any(k in query_lower for k in forbidden):
         return "Xin lỗi, tôi chỉ hỗ trợ các vấn đề về kỹ thuật canh tác nông nghiệp tại Lâm Đồng."
 
-    context = rag_engine.get_relevant_context(query, top_k=3)
+    context = rag_engine.get_relevant_context(query, top_k=5)
     
-    if not context:
-        return "Hệ thống chưa tìm thấy thông tin cụ thể về vấn đề này trong sổ tay kỹ thuật. Bạn có thể hỏi về kỹ thuật trồng cà phê, sầu riêng hoặc chè được không?"
+    # Nếu context quá yếu, AI vẫn nên cố gắng trả lời dựa trên kiến thức chung của nó
+    # nhưng kèm theo cảnh báo là không tìm thấy trong tài liệu nội bộ.
+    context_str = context if context else "Không có dữ liệu cụ thể trong sổ tay kỹ thuật."
 
     if llm:
         prompt = ChatPromptTemplate.from_messages([
             ("system", (
-                "Bạn là chuyên gia tư vấn nông nghiệp tại Lâm Đồng.\n"
-                "Sử dụng ngữ cảnh sau để trả lời: {context}\n"
-                "Lưu ý: Chỉ trả lời các vấn đề nông nghiệp, từ chối các chủ đề khác."
+                "Bạn là 'Trợ Lý Thần Nông' - chuyên gia nông nghiệp tại Lâm Đồng.\n"
+                "NHIỆM VỤ: Giải đáp kỹ thuật canh tác (Cà phê, Sầu riêng, Chè).\n\n"
+                "NGỮ CẢNH HỖ TRỢ:\n{context}\n\n"
+                "QUY TẮC:\n"
+                "1. Nếu NGỮ CẢNH có thông tin, hãy ưu tiên dùng thông tin đó.\n"
+                "2. Nếu NGỮ CẢNH không có, hãy dùng kiến thức chuyên gia của bạn để trả lời, nhưng mở đầu bằng: 'Tài liệu nội bộ chưa có chi tiết, tuy nhiên dựa trên kinh nghiệm nông nghiệp...' \n"
+                "3. Trả lời chi tiết, có cấu trúc gạch đầu dòng.\n"
+                "4. Luôn chúc bà con mùa màng bội thu.\n"
+                "5. KHÔNG trả lời vấn đề ngoài nông nghiệp."
             )),
             ("human", "{query}")
         ])
         chain = prompt | llm | StrOutputParser()
         try:
-            res = await chain.ainvoke({"query": query, "context": context})
+            res = await chain.ainvoke({"query": query, "context": context_str})
             if res: return res
-        except Exception:
+        except Exception as e:
+            print(f"LLM Error: {e}")
             pass
     
-    # Fallback response
-    return "Dựa trên tài liệu kỹ thuật, tôi tìm thấy một số thông tin liên quan:\n\n" + context[:500] + "..."
+    # Fallback cuối cùng
+    if not context:
+        return "Rất tiếc, hệ thống chưa tìm thấy thông tin kỹ thuật cụ thể về vấn đề này. Bà con có thể thử hỏi lại với tên loại cây cụ thể (VD: bệnh rỉ sắt trên cà phê) để tôi tìm kiếm kỹ hơn nhé!"
+        
+    clean_context = context.replace(" . . .", "").replace("...", "")
+    return "Dựa trên tài liệu kỹ thuật, tôi xin tóm tắt các ý chính cho bà con:\n\n" + clean_context[:1000] + "\n\n(Lưu ý: Đây là thông tin trích dẫn thô, bà con nên tham khảo thêm ý kiến chuyên gia địa phương)."
 
 def _run_finance_simulation(crop: str, capital: float, area_ha: float, location: str, mode: str) -> str:
     loc_info = LOCATION_MAPPING.get(location, LOCATION_MAPPING["Phường B'Lao"])

@@ -42,7 +42,7 @@ def get_stats(db: Session = Depends(database.get_db), admin: models.User = Depen
         "admins": admins,
         "crop_distribution": [{"label": c[0], "value": c[1]} for c in crop_stats],
         "region_distribution": [{"label": r[0], "value": r[1]} for r in region_stats],
-        "kb_status": "Ready" if os.path.exists("server/data/chroma_db") else "Not Initialized"
+        "kb_status": "Ready" if os.path.exists(os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "chroma_db")) else "Not Initialized"
     }
 
 @router.post("/ingest")
@@ -50,7 +50,7 @@ def trigger_ingest(admin: models.User = Depends(check_admin)):
     """Kích hoạt quá trình nạp lại tri thức RAG."""
     try:
         # Chạy script ingest trong một tiến trình riêng
-        script_path = os.path.join(os.getcwd(), "server", "ingest_kb.py")
+        script_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "ingest_kb.py")
         subprocess.Popen(["python", script_path])
         return {"message": "Đang bắt đầu quá trình nạp tri thức ngầm..."}
     except Exception as e:
@@ -64,7 +64,7 @@ def list_users(db: Session = Depends(database.get_db), admin: models.User = Depe
 @router.get("/files")
 def list_knowledge_files(admin: models.User = Depends(check_admin)):
     """Liệt kê danh sách file PDF trong kho tri thức."""
-    kb_path = os.path.join("server", "data", "knowledge_base")
+    kb_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "knowledge_base")
     if not os.path.exists(kb_path):
         return []
     
@@ -89,7 +89,7 @@ async def upload_document(file: UploadFile = File(...), admin: models.User = Dep
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Chỉ chấp nhận file định dạng PDF.")
     
-    kb_path = os.path.join("server", "data", "knowledge_base")
+    kb_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "knowledge_base")
     if not os.path.exists(kb_path):
         os.makedirs(kb_path)
     
@@ -102,7 +102,7 @@ async def upload_document(file: UploadFile = File(...), admin: models.User = Dep
 @router.delete("/files/{filename}")
 def delete_document(filename: str, admin: models.User = Depends(check_admin)):
     """Xóa tài liệu khỏi kho tri thức."""
-    kb_path = os.path.join("server", "data", "knowledge_base")
+    kb_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "knowledge_base")
     file_path = os.path.join(kb_path, filename)
     
     if os.path.exists(file_path):

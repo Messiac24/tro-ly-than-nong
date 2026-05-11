@@ -10,8 +10,9 @@ load_dotenv()
 CHROMA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "chroma_db")
 
 # Ngưỡng điểm tương đồng tối thiểu để giữ kết quả
-# (Chroma cosine distance → relevance score: cao hơn = liên quan hơn)
-MIN_RELEVANCE_SCORE = 0.15
+MIN_RELEVANCE_SCORE = 0.22
+# Danh sách từ khóa quan trọng cần ưu tiên
+CROP_KEYWORDS = ["cà phê", "sầu riêng", "chè", "ô long", "rỉ sắt", "nấm", "bón phân", "tưới nước"]
 
 
 class KnowledgeBaseRetrieval:
@@ -58,7 +59,10 @@ class KnowledgeBaseRetrieval:
         # 4. NỐI DÒNG: Đổi dấu xuống dòng (\n) thành dấu cách, trừ khi nó kết thúc bằng dấu câu (. ! ?)
         text = re.sub(r'(?<![.:!?])\n', ' ', text)
         
-        # 5. Xóa khoảng trắng thừa (nhiều dấu cách liền nhau)
+        # 5. Xóa các dãy dấu chấm kéo dài (thường ở mục lục)
+        text = re.sub(r'\.{3,}', ' ', text)
+
+        # 6. Xóa khoảng trắng thừa (nhiều dấu cách liền nhau)
         text = re.sub(r'\s+', ' ', text).strip()
         
         return text
@@ -97,15 +101,21 @@ class KnowledgeBaseRetrieval:
         return text.strip()
 
     def _is_toc_content(self, text: str) -> bool:
-        """Kiểm tra nếu đoạn văn bản chủ yếu là mục lục."""
-        # Đếm số dãy dấu chấm (TOC indicators)
+        """Kiểm tra nếu đoạn văn bản chủ yếu là mục lục hoặc danh mục bài giảng."""
+        # 1. Đếm số dãy dấu chấm (TOC indicators)
         dot_sequences = len(re.findall(r'\.{3,}', text))
-        # Nếu có nhiều hơn 3 dãy dấu chấm, coi như mục lục
         if dot_sequences >= 3:
             return True
-        # Nếu tỷ lệ chữ số / ký tự quá cao (dấu hiệu trang số)
+            
+        # 2. Đếm số lượng các mục số thứ tự dạng (1), (2), (3) hoặc 1., 2., 3.
+        list_patterns = len(re.findall(r'\(\d+\)|\b\d+\.', text))
+        # Nếu có quá nhiều mục số (trên 5 mục) trong một đoạn ngắn, khả năng cao là mục lục
+        if list_patterns >= 5 and len(text) < 600:
+            return True
+
+        # 3. Nếu tỷ lệ chữ số / ký tự quá cao (dấu hiệu trang số)
         digits = sum(c.isdigit() for c in text)
-        if len(text) > 0 and digits / len(text) > 0.15:
+        if len(text) > 0 and digits / len(text) > 0.2:
             return True
         return False
 
@@ -139,13 +149,20 @@ class KnowledgeBaseRetrieval:
         Returns:
             str: Chuỗi văn bản chứa ngữ cảnh từ các tài liệu (đã làm sạch).
         """
+        # Tự động mở rộng câu hỏi (Query Expansion) để tìm kiếm tốt hơn
+        search_query = query
+        if "rỉ sắt" in query.lower() and "cà phê" not in query.lower():
+            search_query += " bệnh rỉ sắt trên cây cà phê"
+        if "sâu đục quả" in query.lower() and "sầu riêng" not in query.lower():
+            search_query += " sâu đục quả sầu riêng"
+
         if not self.vectorstore:
             return ""
 
         try:
             # Dùng similarity_search_with_relevance_scores để lọc kết quả kém
             results = self.vectorstore.similarity_search_with_relevance_scores(
-                query, k=top_k + 4
+                search_query, k=top_k + 4
             )
             
             context_list = []
@@ -156,8 +173,24 @@ class KnowledgeBaseRetrieval:
                 # Bỏ qua kết quả có điểm tương đồng quá thấp
                 if score < MIN_RELEVANCE_SCORE:
                     continue
-                    
+                
                 content = doc.page_content.replace("\n", " ")
+
+                # Lọc bỏ thông tin lệch chủ đề (Ví dụ: hỏi cà phê nhưng ra lúa)
+                if any(kw in query.lower() for kw in ["cà phê", "rỉ sắt", "chè"]):
+                    # BLACKLIST: Loại bỏ thông tin về Khu công nghiệp, quy hoạch, sầu riêng (nếu hỏi về rỉ sắt)
+                    blacklist = ["khu công nghiệp", "kcn", "chất thải", "quy hoạch", "đô thị", "vận tải"]
+                    if "rỉ sắt" in query.lower():
+                        blacklist.extend(["sầu riêng", "thu hoạch sầu riêng", "vải", "khoai tây", "lúa von"])
+                    
+                    if any(x in content.lower() for x in blacklist):
+                        continue
+                        
+                    if any(x in content.lower() for x in ["lúa von", "lúa", "vải", "khoai tây", "bảo quản sau thu hoạch"]):
+                        # Hạ điểm mạnh để loại bỏ
+                        if score - 0.15 < MIN_RELEVANCE_SCORE:
+                            continue
+
                 
                 # Bỏ qua nội dung mục lục
                 if self._is_toc_content(content):
@@ -173,17 +206,32 @@ class KnowledgeBaseRetrieval:
                 if self._is_low_quality(content):
                     continue
                 
-                # Giới hạn độ dài mỗi đoạn
-                if len(content) > 500:
-                    # Cắt tại câu hoàn chỉnh gần vị trí 500
-                    cut_pos = content.rfind('.', 0, 500)
-                    if cut_pos > 200:
+                # Giới hạn độ dài mỗi đoạn (tăng lên để đủ thông tin)
+                if len(content) > 1000:
+                    # Cắt tại câu hoàn chỉnh gần vị trí 1000
+                    cut_pos = content.rfind('.', 0, 1000)
+                    if cut_pos > 500:
                         content = content[:cut_pos + 1]
                     else:
-                        content = content[:500] + "..."
+                        content = content[:1000] + "..."
                 
                 context_list.append(content)
             
+            # Cải tiến: Nếu kết quả Vector Search có điểm thấp, thử tìm kiếm theo từ khóa thô
+            if not context_list or max([s for d, s in results]) < 0.35:
+                keywords = query.lower().split()
+                # Chỉ giữ các từ có nghĩa nông nghiệp
+                important_kws = [k for k in keywords if len(k) > 2]
+                
+                # Tìm kiếm bổ sung trong vectorstore (không dùng score)
+                extra_results = self.vectorstore.similarity_search(query, k=top_k + 2)
+                for doc in extra_results:
+                    if len(context_list) >= top_k: break
+                    content = self._clean_content(doc.page_content)
+                    if any(kw in content.lower() for kw in important_kws) and not self._is_toc_content(content):
+                        if content not in context_list:
+                            context_list.append(content[:1000])
+
             if not context_list:
                 return ""
             

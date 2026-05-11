@@ -947,6 +947,49 @@ body {
     background: rgba(254, 242, 242, 0.95);
 }
 
+/* ── Chat Suggestions ────────────────────────────── */
+.chat-suggestions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 15px;
+    border-top: 1px solid var(--color-border-light);
+    background: #fdfdfd;
+}
+
+.suggestion-chip {
+    padding: 6px 12px;
+    background: #f0f7f4;
+    border: 1px solid #d1e7dd;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.suggestion-chip:hover {
+    background: var(--color-primary);
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* ── Status Message Rotation ────────────────────── */
+.status-rotate {
+    display: inline-block;
+    animation: fadeInOut 2.5s infinite;
+    font-weight: 500;
+}
+
+@keyframes fadeInOut {
+    0% { opacity: 0; transform: translateY(5px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-5px); }
+}
+
 /* ── Floating Button (Mobile) ───────────────────────────── */
 .floating-btn {
     position: fixed;

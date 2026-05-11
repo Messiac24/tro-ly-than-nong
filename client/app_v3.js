@@ -109,9 +109,24 @@ async function handleFormSubmit(e) {
     btnSpinner.classList.remove('hidden');
     hideError();
 
+    // Hiệu ứng xoay vòng thông điệp (Cải tiến số 3)
+    const loadingMsgs = [
+        "🔍 Đang quét 6 năm dữ liệu...",
+        "🌤️ Đang lấy thời tiết Real-time...",
+        "🤖 AI đang dự báo giá (TFT)...",
+        "💰 Đang tính toán ROI & Vốn...",
+        "✅ Đang chuẩn bị khuyến nghị..."
+    ];
+    let msgIdx = 0;
+    const statusEl = btnSpinner.querySelector('span');
+    const msgInterval = setInterval(() => {
+        msgIdx = (msgIdx + 1) % loadingMsgs.length;
+        statusEl.innerHTML = `<span class="status-rotate">${loadingMsgs[msgIdx]}</span>`;
+    }, 1500);
+
     try {
-        // Giả lập spinner 2s như roadmap yêu cầu
-        await new Promise(resolve => setTimeout(resolve, CONFIG.SIMULATED_DELAY));
+        // Giả lập spinner 3.5s để hiện được nhiều thông điệp
+        await new Promise(resolve => setTimeout(resolve, 3500));
 
         // Fetch API
         const response = await fetch(`${CONFIG.API_BASE_URL}/predict`, {
@@ -138,9 +153,11 @@ async function handleFormSubmit(e) {
         showError(error.message);
     } finally {
         // Hoàn tất: Reset button
+        clearInterval(msgInterval);
         submitBtn.disabled = false;
         btnText.classList.remove('hidden');
         btnSpinner.classList.add('hidden');
+        statusEl.textContent = "Đang xử lý...";
     }
 }
 
@@ -648,14 +665,19 @@ function renderFinanceChart(fa) {
                 const costBar = costBarMeta.data[0];
                 const revBar = revBarMeta.data[1];
 
+                const formatLabel = (val) => {
+                    if (val >= 1_000_000_000) {
+                        return (val / 1_000_000_000).toFixed(1) + ' tỷ VNĐ';
+                    }
+                    return (val / 1_000_000).toFixed(0) + ' triệu VNĐ';
+                };
+
                 if (costBar && fa.estimated_cost > 0) {
-                    const text = (fa.estimated_cost / divisor).toFixed(1) + ' ' + unitLabel;
-                    ctx.fillText(text, costBar.x, costBar.y - 5);
+                    ctx.fillText(formatLabel(fa.estimated_cost), costBar.x, costBar.y - 5);
                 }
 
                 if (revBar && fa.estimated_revenue > 0) {
-                    const text = (fa.estimated_revenue / divisor).toFixed(1) + ' ' + unitLabel;
-                    ctx.fillText(text, revBar.x, revBar.y - 5);
+                    ctx.fillText(formatLabel(fa.estimated_revenue), revBar.x, revBar.y - 5);
                 }
 
                 ctx.restore();
@@ -706,7 +728,10 @@ function renderFinanceChart(fa) {
                     },
                     ticks: {
                         callback: function(value) {
-                            return (value / divisor).toFixed(useBillion ? 1 : 0) + (useBillion ? ' tỷ' : 'tr');
+                            if (value >= 1_000_000_000) {
+                                return (value / 1_000_000_000).toFixed(1) + ' tỷ';
+                            }
+                            return (value / 1_000_000).toFixed(0) + ' tr';
                         }
                     }
                 }
@@ -729,7 +754,18 @@ function initChat() {
     if (!chatWidget || !chatToggle) return;
 
     // Mở/Đóng chat
-    chatToggle.addEventListener('click', () => chatWidget.classList.remove('closed'));
+    chatToggle.addEventListener('click', () => {
+        chatWidget.classList.remove('closed');
+        // Hiện gợi ý khi mở chat nếu chưa có tin nhắn nào mới
+        if (chatHistory.length === 0) {
+            renderChatSuggestions([
+                "Giá sầu riêng hôm nay?",
+                "Kỹ thuật bón phân cà phê",
+                "Phòng bệnh rỉ sắt",
+                "Cách tăng năng suất chè"
+            ]);
+        }
+    });
     chatClose.addEventListener('click', () => chatWidget.classList.add('closed'));
 
     // Gửi tin nhắn
@@ -791,6 +827,27 @@ function initChat() {
             console.error("Chat Error:", error);
             addMessage('assistant', '❌ Lỗi kết nối máy chủ AI.');
         }
+    });
+}
+
+function renderChatSuggestions(suggestions) {
+    const container = document.getElementById('chat-suggestions');
+    if (!container) return;
+    container.innerHTML = '';
+    
+    // Chỉ lấy tối đa 4 gợi ý cho gọn
+    suggestions.slice(0, 4).forEach(text => {
+        const chip = document.createElement('div');
+        chip.className = 'suggestion-chip';
+        chip.textContent = text;
+        chip.onclick = () => {
+            const input = document.getElementById('chat-input');
+            input.value = text;
+            document.getElementById('chat-form').dispatchEvent(new Event('submit'));
+            // Xóa gợi ý sau khi chọn
+            container.innerHTML = '';
+        };
+        container.appendChild(chip);
     });
 }
 
