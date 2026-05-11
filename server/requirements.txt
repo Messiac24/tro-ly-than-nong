@@ -8,7 +8,7 @@ python-jose[cryptography]
 bcrypt
 requests
 pandas>=2.2.2
-numpy>=1.26.4
+numpy<2.0.0
 torch>=2.4.0
 pytorch-lightning>=2.4.0
 scikit-learn>=1.5.0

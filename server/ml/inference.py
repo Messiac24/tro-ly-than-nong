@@ -38,41 +38,42 @@ def load_tft_model(crop_name_key):
     if not os.path.exists(path):
         return None
     
-    checkpoint = torch.load(path, map_location=torch.device('cpu'), weights_only=False)
-    params = checkpoint["dataset_parameters"]
-    
-    # Tạo dữ liệu mẫu để TimeSeriesDataSet.from_parameters không báo lỗi thiếu 'data'
-    # Chúng ta chỉ cần các cột tên đúng, không cần dữ liệu thật ở bước này
-    required_cols = list(set(
-        params["group_ids"] + [params["time_idx"], params["target"]] +
-        params["static_categoricals"] + params["static_reals"] +
-        params["time_varying_known_categoricals"] + params["time_varying_known_reals"] +
-        params["time_varying_unknown_categoricals"] + params["time_varying_unknown_reals"]
-    ))
-    # Lấy giá trị thực tế từ file để tránh lỗi lọc dữ liệu do độ dài encoder
-    file_name = f"processed_{file_base}.csv"
-    df_sample = pd.read_csv(os.path.join(DATA_DIR, file_name))
-    df_sample = df_sample.tail(100).copy() # Lấy 100 dòng cuối là đủ cho encoder (90)
-    df_sample['time_idx'] = range(len(df_sample))
-    df_sample['group'] = 0
-    
-    for col in params["time_varying_known_categoricals"]:
-        df_sample[col] = df_sample[col].astype(str)
-    
-    # Khôi phục TimeSeriesDataSet parameters
-    dataset = TimeSeriesDataSet.from_parameters(params, df_sample)
-    
-    tft = TemporalFusionTransformer.from_dataset(
-        dataset,
-        **checkpoint["model_config"]
-    )
-    tft.load_state_dict(checkpoint["model_state_dict"])
-    tft.eval()
-    
-    return {
-        "model": tft,
-        "params": params
-    }
+    try:
+        # Load checkpoint an toàn
+        checkpoint = torch.load(path, map_location=torch.device('cpu'), weights_only=False)
+        params = checkpoint["dataset_parameters"]
+        
+        # Lấy giá trị thực tế từ file để tránh lỗi lọc dữ liệu do độ dài encoder
+        file_name = f"processed_{file_base}.csv"
+        csv_path = os.path.join(DATA_DIR, file_name)
+        if not os.path.exists(csv_path):
+            return None
+            
+        df_sample = pd.read_csv(csv_path)
+        df_sample = df_sample.tail(100).copy() # Lấy 100 dòng cuối là đủ cho encoder (90)
+        df_sample['time_idx'] = range(len(df_sample))
+        df_sample['group'] = 0
+        
+        for col in params.get("time_varying_known_categoricals", []):
+            df_sample[col] = df_sample[col].astype(str)
+        
+        # Khôi phục TimeSeriesDataSet parameters
+        dataset = TimeSeriesDataSet.from_parameters(params, df_sample)
+        
+        tft = TemporalFusionTransformer.from_dataset(
+            dataset,
+            **checkpoint["model_config"]
+        )
+        tft.load_state_dict(checkpoint["model_state_dict"])
+        tft.eval()
+        
+        return {
+            "model": tft,
+            "params": params
+        }
+    except Exception as e:
+        print(f"❌ Cảnh báo: Không thể tải mô hình {crop_name_key} do lỗi: {e}")
+        return None
 
 # Load models globally to avoid reloading on every request
 RISK_MODEL = load_pkl("risk_rf.pkl")
