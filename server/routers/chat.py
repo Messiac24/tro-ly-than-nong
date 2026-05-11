@@ -43,7 +43,7 @@ if API_KEY_VAL:
         )
     else:
         llm = ChatOpenAI(
-            model="google/gemini-2.0-flash-exp:free",
+            model="meta-llama/llama-3.1-8b-instruct:free",
             openai_api_key=API_KEY_VAL,
             base_url="https://openrouter.ai/api/v1",
             temperature=0.3,
