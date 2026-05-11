@@ -7,13 +7,13 @@ passlib[bcrypt]
 python-jose[cryptography]
 bcrypt
 requests
-pandas==2.2.1
-numpy<2.0.0
-torch==2.2.1
-pytorch-lightning==2.2.1
-scikit-learn==1.4.1.post1
-xgboost==2.0.3
-joblib==1.3.2
+pandas>=2.2.2
+numpy>=1.26.4
+torch>=2.4.0
+pytorch-lightning>=2.4.0
+scikit-learn>=1.5.0
+xgboost>=2.0.3
+joblib>=1.4.0
 langchain
 langchain-openai
 langchain-community
@@ -26,5 +26,5 @@ pypdf
 slowapi
 matplotlib
 seaborn
-pytorch-forecasting==1.0.0
+pytorch-forecasting>=1.0.0
 email-validator
