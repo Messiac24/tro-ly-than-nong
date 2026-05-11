@@ -27,3 +27,4 @@ slowapi
 matplotlib
 seaborn
 pytorch-forecasting
+email-validator
