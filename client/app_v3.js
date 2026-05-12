@@ -781,6 +781,7 @@ function initChat() {
         // 2. Add typing indicator
         const typingId = addTypingIndicator();
         
+        try {
             // Đã loại bỏ giả lập suy nghĩ để tăng tốc độ phản hồi
 
             // Lấy ngữ cảnh hiện tại từ form chính
