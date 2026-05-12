@@ -6,8 +6,8 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
-from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
+from openai import OpenAI
 from langchain_core.output_parsers import StrOutputParser
 
 from schemas import ChatRequest, ChatResponse, ChatMessage
@@ -30,28 +30,21 @@ router = APIRouter(
 API_KEY_VAL = os.getenv("GOOGLE_API_KEY") or os.getenv("OPENROUTER_API_KEY")
 CHAT_MODEL = "openai/gpt-4o-mini"
 
-llm = None
-
+llm_client = None
 if API_KEY_VAL:
-    if API_KEY_VAL.startswith("AIza"):
+    if not API_KEY_VAL.startswith("AIza"):
+        llm_client = OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=API_KEY_VAL,
+        )
+    else:
+        # Giữ lại logic cho Gemini nếu dùng Google API Key trực tiếp
         from langchain_google_genai import ChatGoogleGenerativeAI
         llm = ChatGoogleGenerativeAI(
             model="gemini-1.5-flash",
             google_api_key=API_KEY_VAL,
             temperature=0.3,
             max_output_tokens=1024
-        )
-    else:
-        llm = ChatOpenAI(
-            model="meta-llama/llama-3.1-8b-instruct:free",
-            openai_api_key=API_KEY_VAL,
-            base_url="https://openrouter.ai/api/v1",
-            temperature=0.3,
-            max_tokens=1024,
-            default_headers={
-                "HTTP-Referer": "http://localhost:8000",
-                "X-OpenRouter-Title": "Tro Ly Than Nong",
-            }
         )
 
 _GREETING_WORDS = ["xin chào", "chào bạn", "chào", "hello", "hi", "hey", "alo"]
@@ -94,7 +87,7 @@ async def _get_rag_response(query: str) -> str:
     # nhưng kèm theo cảnh báo là không tìm thấy trong tài liệu nội bộ.
     context_str = context if context else "Không có dữ liệu cụ thể trong sổ tay kỹ thuật."
 
-    if llm:
+    if API_KEY_VAL.startswith("AIza") and llm:
         prompt = ChatPromptTemplate.from_messages([
             ("system", (
                 "Bạn là 'Trợ Lý Thần Nông' - chuyên gia nông nghiệp tại Lâm Đồng.\n"
@@ -115,6 +108,35 @@ async def _get_rag_response(query: str) -> str:
             if res: return res
         except Exception as e:
             print(f"LLM Error: {e}")
+            pass
+    elif llm_client:
+        try:
+            response = llm_client.chat.completions.create(
+                model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+                messages=[
+                    {"role": "system", "content": (
+                        "Bạn là 'Trợ Lý Thần Nông' - chuyên gia nông nghiệp tại Lâm Đồng.\n"
+                        f"NGỮ CẢNH HỖ TRỢ:\n{context_str}\n\n"
+                        "QUY TẮC:\n"
+                        "1. Nếu NGỮ CẢNH có thông tin, hãy ưu tiên dùng thông tin đó.\n"
+                        "2. Nếu NGỮ CẢNH không có, hãy dùng kiến thức chuyên gia của bạn để trả lời, nhưng mở đầu bằng: 'Tài liệu nội bộ chưa có chi tiết, tuy nhiên dựa trên kinh nghiệm nông nghiệp...' \n"
+                        "3. Trả lời chi tiết, có cấu trúc gạch đầu dòng.\n"
+                        "4. Luôn chúc bà con mùa màng bội thu.\n"
+                        "5. KHÔNG trả lời vấn đề ngoài nông nghiệp."
+                    )},
+                    {"role": "user", "content": query}
+                ],
+                temperature=0.3,
+                max_tokens=1024,
+                extra_headers={
+                    "HTTP-Referer": "http://localhost:8000",
+                    "X-OpenRouter-Title": "Tro Ly Than Nong",
+                }
+            )
+            res = response.choices[0].message.content
+            if res: return res
+        except Exception as e:
+            print(f"OpenRouter Error: {e}")
             pass
     
     # Fallback cuối cùng
