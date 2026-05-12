@@ -5,7 +5,7 @@ colorFrom: green
 colorTo: yellow
 sdk: docker
 pinned: true
-app_port: 8000
+app_port: 7860
 ---
 
 # 🌾 Trợ Lý Thần Nông (Agricultural AI Assistant)

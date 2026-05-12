@@ -8,7 +8,7 @@ const CONFIG = {
     // Tự động sử dụng localhost nếu đang chạy máy ảo, hoặc dùng domain hiện tại nếu deploy chung
     API_BASE_URL: window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
         ? "http://127.0.0.1:8000/api" 
-        : "/api", 
+        : "api", 
     API_KEY: "dev-key-ai-nong-san-2026",
     SIMULATED_DELAY: 2000, 
 };
