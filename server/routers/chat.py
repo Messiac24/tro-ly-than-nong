@@ -112,7 +112,7 @@ async def _get_rag_response(query: str) -> str:
     elif llm_client:
         try:
             response = llm_client.chat.completions.create(
-                model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+                model="meta-llama/llama-3.3-70b-instruct:free",
                 messages=[
                     {"role": "system", "content": (
                         "Bạn là 'Trợ Lý Thần Nông' - chuyên gia nông nghiệp tại Lâm Đồng.\n"
@@ -127,14 +127,18 @@ async def _get_rag_response(query: str) -> str:
                     {"role": "user", "content": query}
                 ],
                 temperature=0.3,
-                max_tokens=1024,
+                max_tokens=4096,
                 extra_headers={
                     "HTTP-Referer": "http://localhost:8000",
                     "X-OpenRouter-Title": "Tro Ly Than Nong",
                 }
             )
             res = response.choices[0].message.content
-            if res: return res
+            if res:
+                # Loại bỏ các thẻ suy nghĩ (thought) nếu model có trả về
+                res = re.sub(r'<thought>.*?</thought>', '', res, flags=re.DOTALL)
+                res = res.strip()
+                return res
         except Exception as e:
             print(f"OpenRouter Error: {e}")
             pass

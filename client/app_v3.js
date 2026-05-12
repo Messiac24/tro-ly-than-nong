@@ -781,9 +781,7 @@ function initChat() {
         // 2. Add typing indicator
         const typingId = addTypingIndicator();
         
-        try {
-            // Giả lập AI đang suy nghĩ 1.5s
-            await new Promise(resolve => setTimeout(resolve, 1500));
+            // Đã loại bỏ giả lập suy nghĩ để tăng tốc độ phản hồi
 
             // Lấy ngữ cảnh hiện tại từ form chính
             const context = {
