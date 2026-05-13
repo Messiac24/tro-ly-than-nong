@@ -93,17 +93,19 @@ async def upload_document(file: UploadFile = File(...), admin: models.User = Dep
     if not os.path.exists(kb_path):
         os.makedirs(kb_path)
     
-    file_location = os.path.join(kb_path, file.filename)
+    safe_filename = os.path.basename(file.filename)
+    file_location = os.path.join(kb_path, safe_filename)
     with open(file_location, "wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
     
-    return {"message": f"Đã tải lên thành công: {file.filename}", "filename": file.filename}
+    return {"message": f"Đã tải lên thành công: {safe_filename}", "filename": safe_filename}
 
 @router.delete("/files/{filename}")
 def delete_document(filename: str, admin: models.User = Depends(check_admin)):
     """Xóa tài liệu khỏi kho tri thức."""
     kb_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "knowledge_base")
-    file_path = os.path.join(kb_path, filename)
+    safe_filename = os.path.basename(filename)
+    file_path = os.path.join(kb_path, safe_filename)
     
     if os.path.exists(file_path):
         os.remove(file_path)

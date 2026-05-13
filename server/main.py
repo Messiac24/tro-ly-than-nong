@@ -62,7 +62,13 @@ init_admin()
 # CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "http://localhost", 
+        "http://localhost:80", 
+        "http://localhost:8000",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080"
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -70,12 +76,15 @@ app.add_middleware(
 
 
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from fastapi import Request
 from routers import predict, chat, auth, admin
 
+def get_real_ip(request: Request):
+    return request.headers.get("X-Forwarded-For", request.client.host)
+
 # Rate limiting
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_real_ip)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

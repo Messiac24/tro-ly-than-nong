@@ -17,6 +17,8 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements first to leverage Docker cache
 COPY server/requirements.txt .
+# Cài đặt PyTorch bản CPU để tiết kiệm dung lượng image (tránh tải file CUDA > 2GB)
+RUN pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the rest of the application

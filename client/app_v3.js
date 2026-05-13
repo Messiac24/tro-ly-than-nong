@@ -125,8 +125,8 @@ async function handleFormSubmit(e) {
     }, 1500);
 
     try {
-        // Giả lập spinner 3.5s để hiện được nhiều thông điệp
-        await new Promise(resolve => setTimeout(resolve, 3500));
+        // Gỡ bỏ giả lập delay để tối ưu tốc độ phản hồi thực tế
+        // await new Promise(resolve => setTimeout(resolve, 3500));
 
         // Fetch API
         const response = await fetch(`${CONFIG.API_BASE_URL}/predict`, {

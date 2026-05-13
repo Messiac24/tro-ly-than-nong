@@ -12,6 +12,7 @@ services:
     environment:
       - SECRET_KEY=nong-san-bi-mat-2026
       - DATABASE_URL=sqlite:///./server/data/nongsan.db
+      - HF_HOME=/app/server/data/hf_cache
     restart: always
 
   frontend:

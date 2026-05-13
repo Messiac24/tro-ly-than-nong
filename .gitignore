@@ -10,3 +10,23 @@ node_modules/
 .DS_Store
 *.pyc
 .env
+
+# Flutter related
+flutter_nongsan/build/
+flutter_nongsan/.dart_tool/
+flutter_nongsan/.flutter-plugins
+flutter_nongsan/.flutter-plugins-dependencies
+flutter_nongsan/.pub-cache
+flutter_nongsan/.packages
+flutter_nongsan/generated/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.lock
+
+# Logs and databases
+*.log
+*.sqlite3
+server/data/chroma_db/

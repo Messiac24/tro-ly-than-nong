@@ -140,8 +140,11 @@ async def _get_rag_response(query: str) -> str:
                 res = res.strip()
                 return res
         except Exception as e:
-            print(f"OpenRouter Error: {e}")
-            pass
+            error_str = str(e)
+            print(f"OpenRouter Error: {error_str}")
+            if "429" in error_str:
+                return "⚠️ Hệ thống AI (OpenRouter) đang quá tải (Rate Limit). Bà con vui lòng đợi khoảng 30 giây rồi thử hỏi lại nhé, hoặc thử đặt câu hỏi ngắn gọn hơn."
+            return f"⚠️ Có lỗi kết nối với AI: {error_str}. Tôi sẽ tạm thời sử dụng dữ liệu trích dẫn thô từ tài liệu."
     
     # Fallback cuối cùng
     if not context:
