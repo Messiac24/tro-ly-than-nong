@@ -26,26 +26,26 @@ The architecture follows a microservice-ready, domain-driven design pattern buil
 
 ```mermaid
 graph TD
-    Client[Web Client (Vanilla JS/Chart.js)] --> API[FastAPI Gateway]
+    Client["Web Client (Vanilla JS/Chart.js)"] --> API["FastAPI Gateway"]
     
-    subgraph Core AI Services
-        API --> RAG[RAG Engine]
-        API --> DE[Decision Engine]
-        API --> ML[Inference Engine]
+    subgraph Core_AI_Services ["Core AI Services"]
+        API --> RAG["RAG Engine"]
+        API --> DE["Decision Engine"]
+        API --> ML["Inference Engine"]
     end
     
-    subgraph RAG Pipeline
-        RAG --> LLM[Gemini 2.5 Flash / Llama-3.3]
-        RAG --> Chroma[ChromaDB Vector Store]
-        Chroma -.-> Embd[all-MiniLM-L6-v2]
+    subgraph RAG_Pipeline ["RAG Pipeline"]
+        RAG --> LLM["Gemini 2.5 Flash / Llama-3.3"]
+        RAG --> Chroma["ChromaDB Vector Store"]
+        Chroma -.-> Embd["all-MiniLM-L6-v2"]
     end
     
-    subgraph ML Pipeline
-        ML --> TFT[Temporal Fusion Transformer]
-        ML --> XGB[XGBoost Models]
+    subgraph ML_Pipeline ["ML Pipeline"]
+        ML --> TFT["Temporal Fusion Transformer"]
+        ML --> XGB["XGBoost Models"]
     end
     
-    API --> SQLite[(SQLite App DB)]
+    API --> SQLite[("SQLite App DB")]
 ```
 
 ## 🚀 Core Capabilities & Technical Highlights
