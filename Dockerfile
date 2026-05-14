@@ -40,6 +40,10 @@ RUN find . -type d -name "__pycache__" -exec rm -rf {} + \
 
 WORKDIR /app/server
 
+# Setup HuggingFace Cache and Ingest Knowledge Base
+ENV HF_HOME=/app/server/ml/hf_cache
+RUN python ingest_kb.py
+
 # Expose port
 EXPOSE 7860
 
