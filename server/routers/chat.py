@@ -3,6 +3,7 @@ import re
 import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -17,7 +18,7 @@ from routers.auth import get_current_user
 import database, models
 from ml.rag_engine import rag_engine
 from ml.decision_engine import run_decision_engine
-from ml.inference import predict_risk, predict_price, get_weather
+from ml.inference import predict_risk, predict_price, get_weather, get_latest_price
 from ml.expert_rules import run_expert_check
 from config import LOCATION_MAPPING
 
@@ -82,9 +83,18 @@ def classify_intent(message: str) -> str:
 
 def detect_crop_in_message(message: str) -> Optional[str]:
     msg = message.lower()
-    crops = {"sầu riêng": "Sầu riêng Ri6", "robusta": "Cà phê Robusta", "arabica": "Cà phê Arabica", "chè": "Chè Ô Long", "trà": "Chè Ô Long"}
-    for k, v in crops.items():
-        if k in msg: return v
+    # Ánh xạ từ khóa sang tên chuẩn trong hệ thống
+    crop_keywords = {
+        "sầu riêng": "Sầu riêng Ri6",
+        "robusta": "Cà phê Robusta",
+        "arabica": "Cà phê Arabica",
+        "cà phê": "Cà phê Robusta", # Mặc định nếu chỉ nói cà phê
+        "chè": "Chè Ô Long",
+        "trà": "Chè Ô Long"
+    }
+    for kw, full_name in crop_keywords.items():
+        if kw in msg:
+            return full_name
     return None
 
 async def _get_rag_response(query: str) -> str:
@@ -108,15 +118,19 @@ async def _get_rag_response(query: str) -> str:
     if gemini_llm:
         prompt = ChatPromptTemplate.from_messages([
             ("system", (
-                "Bạn là 'Trợ Lý Thần Nông' - chuyên gia nông nghiệp tại Lâm Đồng.\n"
-                "NHIỆM VỤ: Giải đáp kỹ thuật canh tác (Cà phê, Sầu riêng, Chè).\n\n"
-                "NGỮ CẢNH HỖ TRỢ:\n{context}\n\n"
-                "QUY TẮC:\n"
-                "1. Ưu tiên thông tin trong NGỮ CẢNH.\n"
-                "2. Nếu không có trong NGỮ CẢNH, hãy dùng kiến thức chuyên gia nhưng báo rõ: 'Dựa trên kinh nghiệm chung...'.\n"
-                "3. Giải thích chi tiết, cụ thể, phân tích rõ ràng thành các đoạn hoặc gạch đầu dòng.\n"
-                "4. Luôn chúc bà con mùa màng bội thu.\n"
-                "5. KHÔNG trả lời vấn đề ngoài nông nghiệp."
+                "Bạn là 'Trợ Lý Thần Nông' - một chuyên gia nông nghiệp tận tâm tại vùng đất Lâm Đồng.\n"
+                "PHONG CÁCH: Thân thiện, am hiểu địa phương, sử dụng ngôn từ gần gũi với nhà nông (như gọi 'Bà con', chúc 'Mùa màng bội thu').\n\n"
+                "NHIỆM VỤ: Giải đáp các thắc mắc về kỹ thuật canh tác, phòng trừ sâu bệnh cho 3 cây trồng chủ lực: Cà phê, Sầu riêng, và Chè Ô Long.\n\n"
+                "NGỮ CẢNH TỪ SỔ TAY KỸ THUẬT:\n{context}\n\n"
+                "QUY TẮC PHẢN HỒI:\n"
+                "1. Ưu tiên tuyệt đối thông tin từ NGỮ CẢNH cung cấp phía trên.\n"
+                "2. Nếu thông tin không có trong sổ tay, hãy dựa trên kiến thức nông nghiệp chuẩn xác nhưng phải mở đầu bằng: 'Dựa trên kinh nghiệm canh tác chung...'.\n"
+                "3. Trình bày câu trả lời theo cấu trúc:\n"
+                "   - Nhận định vấn đề (AI hiểu bà con đang hỏi gì).\n"
+                "   - Hướng dẫn kỹ thuật chi tiết (Chia theo các bước hoặc gạch đầu dòng).\n"
+                "   - Lưu ý quan trọng (Về thời tiết, liều lượng phân bón/thuốc hoặc an toàn).\n"
+                "4. Luôn kết thúc bằng một lời chúc tốt đẹp cho vụ mùa.\n"
+                "5. Tuyệt đối KHÔNG trả lời các vấn đề chính trị, tôn giáo hoặc nội dung không liên quan đến nông nghiệp."
             )),
             ("human", "{query}")
         ])
@@ -184,13 +198,68 @@ async def _get_rag_response(query: str) -> str:
             return f"⚠️ AI đang bận, tôi xin trích dẫn một đoạn ngắn từ tài liệu kỹ thuật:\n\n> {clean_context}\n\n*(Lưu ý: Do AI đang bận, đây là dữ liệu thô chưa qua xử lý nên có thể khó đọc. Vui lòng thử lại sau 1 phút)*"
         return "Rất tiếc, hệ thống đang bảo trì phần tư vấn tự động."
 
+async def _stream_rag_response(query: str):
+    """Generator function to stream response from LLM."""
+    context = rag_engine.get_relevant_context(query, top_k=5)
+    context_str = context if context else "Không có dữ liệu cụ thể trong sổ tay kỹ thuật."
+    
+    if len(context_str) > 8000:
+        context_str = context_str[:8000] + "\n..."
+
+    prompt = ChatPromptTemplate.from_messages([
+        ("system", (
+            "Bạn là 'Trợ Lý Thần Nông' - Chuyên gia tư vấn nông nghiệp tại Lâm Đồng.\n"
+            "Hãy trả lời bà con bằng giọng văn nhiệt tình, rõ ràng.\n\n"
+            "DỮ LIỆU KỸ THUẬT:\n{context}\n\n"
+            "QUY TẮC:\n"
+            "1. Trình bày gạch đầu dòng rõ ràng, dễ đọc trên điện thoại.\n"
+            "2. Tập trung vào giải pháp khắc phục thực tế.\n"
+            "3. Nếu cần sử dụng thuốc BVTV, hãy nhắc bà con tuân thủ nguyên tắc 4 đúng.\n"
+            "4. Kết hợp khéo léo thông tin từ dữ liệu kỹ thuật và kinh nghiệm thực tế tại địa phương."
+        )),
+        ("human", "{query}")
+    ])
+
+    if gemini_llm:
+        try:
+            chain = prompt | gemini_llm | StrOutputParser()
+            async for chunk in chain.astream({"query": query, "context": context_str}):
+                # Lọc bỏ thẻ thought nếu có
+                clean_chunk = re.sub(r'<thought>.*?</thought>', '', chunk, flags=re.DOTALL)
+                if clean_chunk:
+                    yield clean_chunk
+            return
+        except Exception as e:
+            logger.error(f"Gemini Streaming Error: {e}")
+            # Nếu Gemini lỗi, fallback sang logic text bình thường hoặc yield lỗi
+    
+    if llm_client:
+        try:
+            response = await llm_client.chat.completions.create(
+                model=CHAT_MODEL,
+                messages=[
+                    {"role": "system", "content": f"Bạn là Trợ Lý Thần Nông. Ngữ cảnh: {context_str}"},
+                    {"role": "user", "content": query}
+                ],
+                stream=True,
+                temperature=0.3
+            )
+            async for chunk in response:
+                content = chunk.choices[0].delta.content
+                if content:
+                    yield content
+            return
+        except Exception as e:
+            logger.error(f"LLM Client Streaming Error: {e}")
+            
+    yield "⚠️ AI đang bận hoặc gặp lỗi kết nối. Vui lòng thử lại sau giây lát."
+
 def _run_finance_simulation(crop: str, capital: float, area_ha: float, location: str, mode: str) -> str:
     loc_info = LOCATION_MAPPING.get(location, LOCATION_MAPPING["Phường B'Lao"])
     weather = get_weather(location)
     expert = run_expert_check(crop, location, loc_info["elevation"], weather["temp_max"], weather["temp_min"], weather["precipitation"])
     risk_level, _ = predict_risk(location, crop)
-    current_price_map = {"Cà phê Robusta": 120000, "Cà phê Arabica": 150000, "Sầu riêng Ri6": 70000, "Chè Ô Long": 250000}
-    cur_price = current_price_map.get(crop, 50000)
+    cur_price = get_latest_price(crop)
     forecast_data = predict_price(crop, cur_price, location)
     pred_30d = forecast_data[-1]["predicted"]
     
@@ -253,6 +322,37 @@ async def chat(request: ChatRequest, current_user: models.User = Depends(get_cur
     except Exception as e:
         logger.error(f"Chat Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Lỗi hệ thống")
+
+@router.post("/chat/stream", dependencies=[Depends(verify_api_key)])
+async def chat_stream(request: ChatRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
+    """Endpoint hỗ trợ Streaming response."""
+    try:
+        message = request.message.strip()
+        if not message:
+            return StreamingResponse(iter(["Bạn cần tôi giúp gì?"]), media_type="text/plain")
+            
+        intent = classify_intent(message)
+        
+        # Với Intent greeting/thanks/finance, chúng ta trả về 1 chunk duy nhất (vì nó nhanh)
+        if intent == "greeting":
+            return StreamingResponse(iter(["Chào bạn! Tôi có thể giúp gì cho mùa vụ của bạn?"]), media_type="text/plain")
+        elif intent == "thanks":
+            return StreamingResponse(iter(["Rất vui được giúp bà con!"]), media_type="text/plain")
+        elif intent == "finance":
+            # Logic finance hiện tại chưa hỗ trợ stream vì nó tính toán local nhanh
+            crop = detect_crop_in_message(message) or (request.context.crop if request.context else "Sầu riêng Ri6")
+            loc = request.context.location if request.context else "Phường B'Lao"
+            cap = request.context.capital if request.context and request.context.capital else 200_000_000
+            area = request.context.area_ha if request.context and request.context.area_ha else 1.0
+            mode = request.context.mode if request.context and request.context.mode else "Kinh doanh"
+            answer = _run_finance_simulation(crop, cap, area, loc, mode)
+            return StreamingResponse(iter([answer]), media_type="text/plain")
+            
+        # Với Intent agriculture, chúng ta thực hiện Streaming từ LLM
+        return StreamingResponse(_stream_rag_response(message), media_type="text/event-stream")
+    except Exception as e:
+        logger.error(f"Stream Error: {e}")
+        return StreamingResponse(iter(["Lỗi kết nối server."]), media_type="text/plain")
 
 @router.get("/chat/history")
 async def get_chat_history(current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):

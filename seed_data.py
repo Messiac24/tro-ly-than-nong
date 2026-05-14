@@ -57,7 +57,7 @@ for u in test_users:
 
 # 2. Tao du lieu tra cuu mau (de ve bieu do)
 locations = ["Phường B'Lao", "Phường Xuân Trường"]
-crops = ["Sầu riêng Ri6", "Cà phê Robusta (TR4/TR9)", "Chè Oolong"]
+crops = ["Sầu riêng Ri6", "Cà phê Robusta (TR4/TR9)", "Chè Oolong", "Cà phê Arabica"]
 modes = ["Kinh doanh (Thu hoạch)", "Kiến thiết cơ bản (Trồng mới)"]
 
 print("\n--- Dang tao lich su tra cuu mau ---")

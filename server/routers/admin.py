@@ -120,7 +120,7 @@ def get_chat_trends(db: Session = Depends(database.get_db), admin: models.User =
     all_text = " ".join([c[0].lower() for c in chats])
     
     # Các từ khóa nông nghiệp cần theo dõi
-    keywords = ["sầu riêng", "cà phê", "bón phân", "sâu bệnh", "giá", "chi phí", "thu hoạch", "tưới nước"]
+    keywords = ["sầu riêng", "cà phê", "arabica", "robusta", "bón phân", "sâu bệnh", "giá", "chi phí", "thu hoạch", "tưới nước"]
     trends = []
     for kw in keywords:
         count = all_text.count(kw)

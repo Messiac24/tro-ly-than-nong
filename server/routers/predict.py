@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+import database, models
 from schemas import PredictRequest, PredictResponse
 from dependencies import verify_api_key
 from routers.auth import get_current_user
@@ -19,7 +21,7 @@ router = APIRouter(
     summary="Phân tích AI dự báo canh tác & giá nông sản",
     dependencies=[Depends(verify_api_key), Depends(get_current_user)],
 )
-async def predict(request: PredictRequest):
+async def predict(request: PredictRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
     """
     Luồng xử lý chính:
     1. Kiểm tra rủi ro (Module 2).
@@ -363,6 +365,23 @@ async def predict(request: PredictRequest):
     # ── Cảnh báo giá vật tư phân bón ──
     fertilizer_advice = "Dự báo giá phân bón (Ure, DAP) có thể biến động nhẹ trong tháng tới do ảnh hưởng của giá nguyên liệu đầu vào. Bà con nên theo dõi thông tin từ đại lý địa phương để chủ động nguồn phân bón cho vụ mùa, tránh mua gom tích trữ quá mức."
     
+    # 6. Lưu vào lịch sử tra cứu
+    try:
+        new_history = models.SearchHistory(
+            user_id=current_user.id,
+            location=loc_name,
+            crop=request.crop,
+            mode=request.mode,
+            capital=request.capital,
+            area_ha=request.area_ha,
+            risk_level=risk_level_str,
+            recommendation=decision["production_decision"]["recommendation"]
+        )
+        db.add(new_history)
+        db.commit()
+    except Exception as e:
+        print(f"Error saving search history: {e}")
+
     return PredictResponse(
         status="success",
         location_info={

@@ -294,3 +294,37 @@ def predict_price(crop_name, current_price, location_name="Phường B'Lao"):
             })
             
     return forecast
+
+def get_latest_price(crop_name):
+    """
+    Lấy giá mới nhất từ file CSV dữ liệu lịch sử.
+    Nếu không tìm thấy, trả về giá mặc định an toàn.
+    """
+    try:
+        file_base = CROP_FILE_MAP.get(crop_name)
+        if not file_base:
+            # Fallback nếu không khớp tên (cho sầu riêng, chè...)
+            clean_name = crop_name.lower()
+            if "sầu riêng" in clean_name: file_base = "durian_ri6"
+            elif "chè" in clean_name or "ô long" in clean_name: file_base = "oolong"
+            else: return 120000.0 # Giá mặc định chung
+
+        file_name = f"processed_{file_base}.csv"
+        csv_path = os.path.join(DATA_DIR, file_name)
+        
+        if os.path.exists(csv_path):
+            # Chỉ đọc dòng cuối cùng để tiết kiệm RAM
+            df = pd.read_csv(csv_path)
+            if not df.empty:
+                return float(df.iloc[-1]['price_vnd'])
+    except Exception as e:
+        print(f"⚠️ Lỗi khi lấy giá mới nhất cho {crop_name}: {e}")
+    
+    # Giá fallback dựa trên loại cây nếu có lỗi
+    fallbacks = {
+        "Cà phê Robusta": 120000.0,
+        "Cà phê Arabica": 150000.0,
+        "Sầu riêng Ri6": 115000.0,
+        "Chè Ô Long": 250000.0
+    }
+    return fallbacks.get(crop_name, 100000.0)
