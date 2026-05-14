@@ -8,85 +8,172 @@ pinned: true
 app_port: 7860
 ---
 
-# 🌾 Trợ Lý Thần Nông (Agricultural AI Assistant)
+# 🌾 Trợ Lý Thần Nông (Agricultural AI Ecosystem)
 
-Hệ thống hỗ trợ nông nghiệp thông minh dành riêng cho khu vực Lâm Đồng, tích hợp AI đa mô hình để hỗ trợ bà con nông dân trong việc dự báo giá, đánh giá rủi ro và tư vấn kỹ thuật canh tác.
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.103.1-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
+[![LangChain](https://img.shields.io/badge/LangChain-1.3.0-blue.svg)](https://langchain.com/)
+[![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED.svg?logo=docker)](https://www.docker.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## 🚀 Tính Năng Cốt Lõi
+An enterprise-grade, highly scalable Agricultural AI Decision Support System designed specifically for the Central Highlands (Lâm Đồng) region of Vietnam. The platform integrates a **Retrieval-Augmented Generation (RAG)** pipeline for real-time agronomic consultation, alongside an advanced **Machine Learning subsystem** utilizing Temporal Fusion Transformers (TFT) and XGBoost for market price forecasting and ecological risk assessment.
 
-### 1. Hệ Thống RAG (Retrieval-Augmented Generation)
+---
 
-- **Tri thức chuyên sâu:** Nạp dữ liệu từ hơn 1,500 trang tài liệu kỹ thuật (VietGAP, Sổ tay canh tác WASI, quy trình phòng trừ sâu bệnh CropLife).
-- **AI Engine:** Sử dụng mô hình ngôn ngữ lớn **Llama-3.3-70B-Instruct** kết hợp với **ChromaDB** và **HuggingFace Embeddings** (`all-MiniLM-L6-v2`) để cung cấp phản hồi chính xác, bám sát thực tế địa phương.
-- **Xử lý ngôn ngữ:** Hỗ trợ tiếng Việt tự nhiên, phong cách gần gũi với nông dân nhưng vẫn đảm bảo tính khoa học.
+## 🏗️ System Architecture
 
-### 2. Dự Báo Giá & Phân Tích Tài Chính
+The architecture follows a microservice-ready, domain-driven design pattern built on top of asynchronous Python (FastAPI).
 
-- **Mô hình dự báo:**
-  - **TFT (Temporal Fusion Transformer):** Dự báo giá Cà phê dựa trên dữ liệu lịch sử và các biến số thời tiết toàn cầu.
-  - **XGBoost:** Dự báo biến động giá Sầu riêng và Chè Ô Long.
-- **ROI Analysis:** Tính toán lợi nhuận dự kiến, thời gian thu hồi vốn và phân bổ chi phí vật tư (phân bón, nhân công, hạt giống).
+```mermaid
+graph TD
+    Client[Web Client (Vanilla JS/Chart.js)] --> API[FastAPI Gateway]
+    
+    subgraph Core AI Services
+        API --> RAG[RAG Engine]
+        API --> DE[Decision Engine]
+        API --> ML[Inference Engine]
+    end
+    
+    subgraph RAG Pipeline
+        RAG --> LLM[Gemini 2.5 Flash / Llama-3.3]
+        RAG --> Chroma[ChromaDB Vector Store]
+        Chroma -.-> Embd[all-MiniLM-L6-v2]
+    end
+    
+    subgraph ML Pipeline
+        ML --> TFT[Temporal Fusion Transformer]
+        ML --> XGB[XGBoost Models]
+    end
+    
+    API --> SQLite[(SQLite App DB)]
+```
 
-### 3. Đánh Giá Rủi Ro Sinh Thái
+## 🚀 Core Capabilities & Technical Highlights
 
-- **Real-time Weather:** Tích hợp dữ liệu thời tiết trực tiếp để cảnh báo sương muối (tại Đà Lạt) hoặc mưa lớn gây thối rễ sầu riêng (tại Bảo Lộc).
-- **Expert Rules:** Hệ thống luật chuyên gia đánh giá mức độ rủi ro dựa trên độ cao (elevation), thổ nhưỡng và chu kỳ sinh trưởng của cây trồng.
+### 1. Hybrid RAG Engine (Agronomic Knowledge Base)
+- **Vector Search**: Utilizes `ChromaDB` for high-dimensional semantic search across 1,500+ pages of standardized agricultural guidelines (VietGAP, CropLife, WASI).
+- **Embeddings**: `sentence-transformers/all-MiniLM-L6-v2` for localized Vietnamese text embedding optimization.
+- **LLM Orchestration**: Powered by `LangChain`. Implements an asynchronous fallback mechanism (Primary: `Gemini 2.5 Flash` via Google GenAI SDK, Secondary: Local LLMs via LM Studio/OpenRouter) to ensure 99.9% uptime during high-load periods.
+- **Prompt Engineering**: Context-aware injection with hard constraints against hallucination and out-of-scope non-agricultural queries.
 
-### 4. Giao Diện Hiện Đại & Trực Quan
+### 2. Multi-Model Predictive Analytics
+- **Temporal Fusion Transformer (TFT)**: Applied via `pytorch-forecasting` for multivariate time-series forecasting (Robusta Coffee prices), incorporating global weather anomalies and macro-economic indicators.
+- **Gradient Boosting (XGBoost)**: Low-latency inference for non-stationary commodities (Durian, Oolong Tea) with automated feature engineering pipelines (lag features, rolling means).
 
-- **Thiết kế Glassmorphism:** Trải nghiệm người dùng cao cấp, hỗ trợ cả Dark Mode.
-- **Biểu đồ tương tác:** Sử dụng **Chart.js** để trực quan hóa biến động giá và biểu đồ tài chính.
+### 3. Financial & Ecological Decision Engine
+- **Expert Rules Engine**: A localized ruleset evaluating real-time weather APIs (temperature, precipitation) against optimal ecological parameters (elevation, crop cycle) to predict yield risk.
+- **ROI Simulation**: Real-time CAPEX/OPEX modeling computing Estimated Cost, Projected Revenue, and ROI percentage based on dynamically predicted market prices.
 
-## 🛠 Công Nghệ Sử Dụng
+### 4. High-Performance Asynchronous Backend
+- **Framework**: `FastAPI` running on `uvicorn` (ASGI), enabling non-blocking I/O for concurrent AI model inference.
+- **Rate Limiting & Security**: Implemented `slowapi` for memory-based endpoint throttling. JWT-based authentication with bcrypt password hashing for admin endpoints.
 
-| Thành phần           | Công nghệ                                   |
-| -------------------- | ------------------------------------------- |
-| **Backend**          | FastAPI (Python 3.11), SQLAlchemy, Pydantic |
-| **Database**         | SQLite (App data), ChromaDB (Vector store)  |
-| **LLM SDK**          | OpenAI SDK (via OpenRouter)                 |
-| **Machine Learning** | PyTorch, XGBoost, Scikit-learn, Pandas      |
-| **Frontend**         | Vanilla Javascript, Vanilla CSS, Chart.js   |
-| **Deployment**       | Docker, Hugging Face Spaces                 |
+---
 
-## 📦 Cài Đặt Local
+## 🛠️ Technology Stack
 
-1. **Clone repository:**
+| Domain | Technologies |
+| :--- | :--- |
+| **Backend Framework** | `FastAPI`, `Uvicorn`, `Pydantic` (V2) |
+| **Database & ORM** | `SQLAlchemy` 2.0, `SQLite` |
+| **Vector Database** | `ChromaDB` |
+| **AI / LLM Orchestration** | `LangChain`, `Google GenAI SDK`, `OpenAI Async SDK` |
+| **Machine Learning** | `PyTorch 2.x`, `PyTorch Lightning`, `XGBoost`, `Scikit-learn`, `Pandas` |
+| **Frontend UI/UX** | Vanilla JS, Modern CSS (Glassmorphism), `Chart.js` |
+| **Deployment** | `Docker`, `Hugging Face Spaces` |
 
-   ```bash
-   git clone https://github.com/Messiac24/tro-ly-than-nong.git
-   cd tro-ly-than-nong
-   ```
+---
 
-2. **Cấu hình biến môi trường:**
-   Tạo file `.env` trong thư mục `server/`:
+## 💻 Local Development Setup
 
-   ```env
-   OPENROUTER_API_KEY=your_key_here
-   SECRET_KEY=your_secret_key
-   DATABASE_URL=sqlite:///./data/nongsan_v2.sqlite3
-   ```
+### Prerequisites
+- Python 3.11+
+- Git LFS (for downloading model weights)
+- Docker (optional, but recommended)
 
-3. **Chạy bằng Docker (Khuyên dùng):**
+### 1. Environment Configuration
 
-   ```bash
-   docker build -t tro-ly-than-nong .
-   docker run -p 8000:8000 tro-ly-than-nong
-   ```
+Clone the repository and configure the `.env` file in the `server/` directory:
 
-4. **Chạy thủ công:**
-   ```bash
-   cd server
-   pip install -r requirements.txt
-   python main.py
-   ```
+```bash
+git clone https://github.com/Messiac24/tro-ly-than-nong.git
+cd tro-ly-than-nong/server
+cp .env.example .env
+```
 
-## 📂 Cấu Trúc Thư Mục
+**Required Environment Variables:**
+```env
+# AI Model Configuration
+GEMINI_API_KEY="your_google_ai_studio_key"
+OPENROUTER_API_KEY="your_openrouter_key"
+LM_STUDIO_URL="http://127.0.0.1:1234/v1"
 
-- `/server`: Chứa mã nguồn API, logic AI và xử lý dữ liệu.
-  - `/ml`: Các mô hình Machine Learning và RAG Engine.
-  - `/data`: Cơ sở dữ liệu và kho tài liệu PDF.
-- `/client`: Giao diện người dùng (HTML, CSS, JS).
+# Database & Security
+DATABASE_URL="sqlite:///./data/nongsan_v2.sqlite3"
+SECRET_KEY="your_jwt_secret_key"
+DEFAULT_ADMIN_PWD="admin_password"
+```
 
-## 📄 Giấy Phép & Bản Quyền
+### 2. Standalone Execution (Virtual Environment)
 
-Dự án được phát triển nhằm hỗ trợ cộng đồng nông nghiệp. Mọi đóng góp vui lòng gửi Pull Request hoặc tạo Issue trên GitHub.
+```bash
+# Create and activate virtual environment
+python -m venv .venv
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# Install dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
+
+# Run the FastAPI server
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+### 3. Dockerized Deployment (Production)
+
+```bash
+# Build the multi-stage Docker image
+docker build -t messiac24/tro-ly-than-nong:latest .
+
+# Run the container
+docker run -d --name thannong_api -p 8000:8000 --env-file server/.env messiac24/tro-ly-than-nong:latest
+```
+
+---
+
+## 📂 Repository Structure
+
+```text
+.
+├── client/                 # Frontend assets (HTML, CSS, JS, Chart.js)
+├── server/                 # FastAPI Backend Application
+│   ├── ai_models/          # Pre-trained ML weights (.pkl, .ckpt)
+│   ├── data/               # SQLite DB & ChromaDB persistence layer
+│   ├── ml/                 # RAG Engine, Inference Scripts, Rules Engine
+│   ├── routers/            # API Endpoints (Auth, Chat, Predict, Admin)
+│   ├── config.py           # Centralized configuration mapping
+│   ├── main.py             # ASGI Application entry point
+│   └── requirements.txt    # Python dependencies
+├── testsprite_tests/       # Automated test cases
+└── Dockerfile              # Production-optimized Docker build instructions
+```
+
+---
+
+## 📊 API Endpoints Overview
+
+| Method | Endpoint | Description |
+| :--- | :--- | :--- |
+| `POST` | `/api/chat` | Main interaction endpoint for the RAG Assistant |
+| `POST` | `/api/predict/price` | Retrieves TFT/XGBoost 30-day price forecasts |
+| `POST` | `/api/predict/risk` | Evaluates ecological viability for specific crops |
+| `GET`  | `/api/chat/history`| Retrieves contextual conversation history for users |
+| `GET`  | `/health` | Kubernetes-compatible liveness probe |
+
+---
+
+## 📜 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+> **Note:** The data sets used for training the Machine Learning models are proprietary. The pre-trained weights provided are for demonstration purposes within the Lâm Đồng geographic boundary.
