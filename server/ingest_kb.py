@@ -1,8 +1,10 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 import os
 import re
 import glob
 import sys
-from dotenv import load_dotenv
 
 # Force UTF-8 encoding for standard output/error to prevent UnicodeEncodeError on Windows
 if hasattr(sys.stdout, 'reconfigure'):

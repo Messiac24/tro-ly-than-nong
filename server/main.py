@@ -94,10 +94,9 @@ app.include_router(predict.router)
 app.include_router(chat.router)
 app.include_router(admin.router)
 
-# Static files
-client_path = os.path.join(os.path.dirname(current_dir), "client")
-if os.path.exists(client_path):
-    app.mount("/", StaticFiles(directory=client_path, html=True), name="client")
+@app.get("/health", tags=["Health"])
+async def health_check():
+    return {"status": "healthy"}
 
 
 @app.get("/", tags=["Health"])
@@ -106,6 +105,7 @@ async def root():
     return RedirectResponse(url="/index.html")
 
 
-@app.get("/health", tags=["Health"])
-async def health_check():
-    return {"status": "healthy"}
+# Static files
+client_path = os.path.join(os.path.dirname(current_dir), "client")
+if os.path.exists(client_path):
+    app.mount("/", StaticFiles(directory=client_path, html=True), name="client")

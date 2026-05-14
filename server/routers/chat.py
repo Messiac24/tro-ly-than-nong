@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 from langchain_core.prompts import ChatPromptTemplate
-from openai import OpenAI
+from openai import AsyncOpenAI
 from langchain_core.output_parsers import StrOutputParser
 
 from schemas import ChatRequest, ChatResponse, ChatMessage
@@ -27,25 +27,17 @@ router = APIRouter(
     tags=["Chat"],
 )
 
-API_KEY_VAL = os.getenv("GOOGLE_API_KEY") or os.getenv("OPENROUTER_API_KEY")
-CHAT_MODEL = "openai/gpt-4o-mini"
+# LM Studio Configuration
+LM_STUDIO_URL = os.getenv("LM_STUDIO_URL", "http://127.0.0.1:1234/v1")
+CHAT_MODEL = os.getenv("CHAT_MODEL", "google/gemma-2-9b")
+API_KEY_VAL = os.getenv("OPENROUTER_API_KEY", "lm-studio")
 
 llm_client = None
-if API_KEY_VAL:
-    if not API_KEY_VAL.startswith("AIza"):
-        llm_client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=API_KEY_VAL,
-        )
-    else:
-        # Giữ lại logic cho Gemini nếu dùng Google API Key trực tiếp
-        from langchain_google_genai import ChatGoogleGenerativeAI
-        llm = ChatGoogleGenerativeAI(
-            model="gemini-1.5-flash",
-            google_api_key=API_KEY_VAL,
-            temperature=0.3,
-            max_output_tokens=1024
-        )
+if LM_STUDIO_URL:
+    llm_client = AsyncOpenAI(
+        base_url=LM_STUDIO_URL,
+        api_key=API_KEY_VAL,
+    )
 
 _GREETING_WORDS = ["xin chào", "chào bạn", "chào", "hello", "hi", "hey", "alo"]
 _THANKS_WORDS = ["cảm ơn", "cám ơn", "thanks", "thank you", "tạm biệt", "bye"]
@@ -81,7 +73,8 @@ async def _get_rag_response(query: str) -> str:
     if any(k in query_lower for k in forbidden):
         return "Xin lỗi, tôi chỉ hỗ trợ các vấn đề về kỹ thuật canh tác nông nghiệp tại Lâm Đồng."
 
-    context = rag_engine.get_relevant_context(query, top_k=5)
+    # Giảm top_k để tiết kiệm token và tránh Rate Limit cho tài khoản free
+    context = rag_engine.get_relevant_context(query, top_k=3)
     
     # Nếu context quá yếu, AI vẫn nên cố gắng trả lời dựa trên kiến thức chung của nó
     # nhưng kèm theo cảnh báo là không tìm thấy trong tài liệu nội bộ.
@@ -94,9 +87,9 @@ async def _get_rag_response(query: str) -> str:
                 "NHIỆM VỤ: Giải đáp kỹ thuật canh tác (Cà phê, Sầu riêng, Chè).\n\n"
                 "NGỮ CẢNH HỖ TRỢ:\n{context}\n\n"
                 "QUY TẮC:\n"
-                "1. Nếu NGỮ CẢNH có thông tin, hãy ưu tiên dùng thông tin đó.\n"
-                "2. Nếu NGỮ CẢNH không có, hãy dùng kiến thức chuyên gia của bạn để trả lời, nhưng mở đầu bằng: 'Tài liệu nội bộ chưa có chi tiết, tuy nhiên dựa trên kinh nghiệm nông nghiệp...' \n"
-                "3. Trả lời chi tiết, có cấu trúc gạch đầu dòng.\n"
+                "1. Ưu tiên thông tin trong NGỮ CẢNH.\n"
+                "2. Nếu không có trong NGỮ CẢNH, hãy dùng kiến thức chuyên gia nhưng báo rõ: 'Dựa trên kinh nghiệm chung...'.\n"
+                "3. TRẢ LỜI NGẮN GỌN, cô đọng, dùng gạch đầu dòng (Tối đa 150-200 từ).\n"
                 "4. Luôn chúc bà con mùa màng bội thu.\n"
                 "5. KHÔNG trả lời vấn đề ngoài nông nghiệp."
             )),
@@ -111,23 +104,22 @@ async def _get_rag_response(query: str) -> str:
             pass
     elif llm_client:
         try:
-            response = llm_client.chat.completions.create(
-                model="meta-llama/llama-3.3-70b-instruct:free",
+            response = await llm_client.chat.completions.create(
+                model=CHAT_MODEL,
                 messages=[
                     {"role": "system", "content": (
                         "Bạn là 'Trợ Lý Thần Nông' - chuyên gia nông nghiệp tại Lâm Đồng.\n"
                         f"NGỮ CẢNH HỖ TRỢ:\n{context_str}\n\n"
                         "QUY TẮC:\n"
-                        "1. Nếu NGỮ CẢNH có thông tin, hãy ưu tiên dùng thông tin đó.\n"
-                        "2. Nếu NGỮ CẢNH không có, hãy dùng kiến thức chuyên gia của bạn để trả lời, nhưng mở đầu bằng: 'Tài liệu nội bộ chưa có chi tiết, tuy nhiên dựa trên kinh nghiệm nông nghiệp...' \n"
-                        "3. Trả lời chi tiết, có cấu trúc gạch đầu dòng.\n"
-                        "4. Luôn chúc bà con mùa màng bội thu.\n"
-                        "5. KHÔNG trả lời vấn đề ngoài nông nghiệp."
+                        "1. Ưu tiên thông tin trong NGỮ CẢNH.\n"
+                        "2. TRẢ LỜI CỰC KỲ NGẮN GỌN, súc tích, tập trung vào giải pháp kỹ thuật.\n"
+                        "3. Dùng gạch đầu dòng, tối đa 3-5 ý chính.\n"
+                        "4. KHÔNG trả lời các vấn đề ngoài nông nghiệp."
                     )},
                     {"role": "user", "content": query}
                 ],
                 temperature=0.3,
-                max_tokens=4096,
+                max_tokens=1024,
                 extra_headers={
                     "HTTP-Referer": "http://localhost:8000",
                     "X-OpenRouter-Title": "Tro Ly Than Nong",
@@ -140,18 +132,13 @@ async def _get_rag_response(query: str) -> str:
                 res = res.strip()
                 return res
         except Exception as e:
-            error_str = str(e)
-            print(f"OpenRouter Error: {error_str}")
-            if "429" in error_str:
-                return "⚠️ Hệ thống AI (OpenRouter) đang quá tải (Rate Limit). Bà con vui lòng đợi khoảng 30 giây rồi thử hỏi lại nhé, hoặc thử đặt câu hỏi ngắn gọn hơn."
-            return f"⚠️ Có lỗi kết nối với AI: {error_str}. Tôi sẽ tạm thời sử dụng dữ liệu trích dẫn thô từ tài liệu."
-    
-    # Fallback cuối cùng
-    if not context:
-        return "Rất tiếc, hệ thống chưa tìm thấy thông tin kỹ thuật cụ thể về vấn đề này. Bà con có thể thử hỏi lại với tên loại cây cụ thể (VD: bệnh rỉ sắt trên cà phê) để tôi tìm kiếm kỹ hơn nhé!"
-        
-    clean_context = context.replace(" . . .", "").replace("...", "")
-    return "Dựa trên tài liệu kỹ thuật, tôi xin tóm tắt các ý chính cho bà con:\n\n" + clean_context[:1000] + "\n\n(Lưu ý: Đây là thông tin trích dẫn thô, bà con nên tham khảo thêm ý kiến chuyên gia địa phương)."
+            # Fallback cuối cùng: Trả về trực tiếp thông tin từ RAG nếu AI quá tải
+            print(f"Chat API Error: {e}")
+            if not context:
+                return "Rất tiếc, hệ thống chưa tìm thấy thông tin kỹ thuật cụ thể. Bà con có thể thử hỏi lại với tên loại cây cụ thể (VD: bệnh rỉ sắt trên cà phê) nhé!"
+                
+            clean_context = context.replace(" . . .", "").replace("...", "").strip()
+            return "⚠️ AI đang bận, tôi xin trích dẫn trực tiếp từ tài liệu kỹ thuật để bà con tham khảo ngay:\n\n" + clean_context + "\n\n(Lưu ý: Đây là dữ liệu gốc từ sổ tay hướng dẫn)."
 
 def _run_finance_simulation(crop: str, capital: float, area_ha: float, location: str, mode: str) -> str:
     loc_info = LOCATION_MAPPING.get(location, LOCATION_MAPPING["Phường B'Lao"])

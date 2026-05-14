@@ -149,6 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleLogin() async {
     setState(() => _isLoading = true);
     final result = await AuthService.login(_userController.text, _passController.text);
+    if (!mounted) return;
     setState(() => _isLoading = false);
     
     if (result['success']) {
@@ -187,7 +188,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       _btn(_isLoading ? 'Đang xử lý...' : 'Đăng nhập', _isLoading ? null : _handleLogin),
                       const SizedBox(height: 16),
                       TextButton(
-                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RegisterScreen())),
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RegisterScreen(onShowLogin: () => Navigator.pop(context)))),
                         child: const Text('Chưa có tài khoản? Đăng ký ngay', style: TextStyle(color: Color(0xFF2D6A4F))),
                       ),
                     ],
@@ -207,7 +208,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
 // ── Register Screen ───────────────────────────────────────────
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  final VoidCallback onShowLogin;
+  const RegisterScreen({super.key, required this.onShowLogin});
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
@@ -229,11 +231,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
       password: _passController.text,
       fullName: _nameController.text,
     );
+    if (!mounted) return;
+    
     setState(() => _isLoading = false);
 
     if (result['success']) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Đăng ký thành công! Hãy đăng nhập.')));
-      Navigator.pop(context);
+      widget.onShowLogin();
     } else {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result['message'])));
     }
@@ -336,6 +340,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
         headers: {'Content-Type': 'application/json', 'X-API-Key': AuthService.apiKey, 'Authorization': 'Bearer ${AuthService.token}'},
         body: jsonEncode({'location': _selectedLoc, 'crop': _selectedCrop, 'capital': 100000000, 'area_ha': 1.0}),
       );
+      if (!mounted) return;
       if (res.statusCode == 200) setState(() => _result = jsonDecode(utf8.decode(res.bodyBytes)));
     } catch (e) { debugPrint(e.toString()); }
     setState(() => _isLoading = false);
@@ -370,7 +375,7 @@ class _AnalysisPageState extends State<AnalysisPage> {
           SizedBox(width: double.infinity, height: 56, child: ElevatedButton(onPressed: _isLoading ? null : _analyze, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2D6A4F), foregroundColor: Colors.white, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))), child: _isLoading ? const CircularProgressIndicator(color: Colors.white) : const Text('Phân tích hệ thống', style: TextStyle(fontWeight: FontWeight.bold)))),
         ]));
 
-  Widget _dropdown(String l, String? v, List<String> i, ValueChanged<String?> o) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(l, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1B4332))), const SizedBox(height: 8), DropdownButtonFormField<String>(value: v, decoration: InputDecoration(filled: true, fillColor: const Color(0xFFF8F9F0), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)), items: i.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: o)]);
+  Widget _dropdown(String l, String? v, List<String> i, ValueChanged<String?> o) => Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(l, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Color(0xFF1B4332))), const SizedBox(height: 8), DropdownButtonFormField<String>(initialValue: v, decoration: InputDecoration(filled: true, fillColor: const Color(0xFFF8F9F0), border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none)), items: i.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(), onChanged: o)]);
   Widget _buildWeatherStat(Map<String, dynamic> i) => Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: const Color(0xFF2D6A4F), borderRadius: BorderRadius.circular(24)), child: Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: [_stat(LucideIcons.thermometer, '${i['current_temp']}°C', 'Nhiệt độ'), _stat(LucideIcons.droplets, '${i['recent_rainfall_mm']}mm', 'Lượng mưa'), _stat(LucideIcons.mountain, '${i['elevation']}m', 'Độ cao')]));
   Widget _stat(IconData i, String v, String l) => Column(children: [Icon(i, color: Colors.white70, size: 20), const SizedBox(height: 4), Text(v, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)), Text(l, style: const TextStyle(color: Colors.white54, fontSize: 10))]);
   Widget _buildRecommendation(Map<String, dynamic> p) {

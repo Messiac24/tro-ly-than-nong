@@ -30,3 +30,5 @@ flutter_nongsan/generated/
 *.log
 *.sqlite3
 server/data/chroma_db/
+server/ml/hf_cache/
+scratch/
