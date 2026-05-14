@@ -14,7 +14,6 @@ app_port: 7860
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.103.1-009688.svg?logo=fastapi)](https://fastapi.tiangolo.com)
 [![LangChain](https://img.shields.io/badge/LangChain-1.3.0-blue.svg)](https://langchain.com/)
 [![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED.svg?logo=docker)](https://www.docker.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 An enterprise-grade, highly scalable Agricultural AI Decision Support System designed specifically for the Central Highlands (Lâm Đồng) region of Vietnam. The platform integrates a **Retrieval-Augmented Generation (RAG)** pipeline for real-time agronomic consultation, alongside an advanced **Machine Learning subsystem** utilizing Temporal Fusion Transformers (TFT) and XGBoost for market price forecasting and ecological risk assessment.
 
@@ -171,9 +170,3 @@ docker run -d --name thannong_api -p 8000:8000 --env-file server/.env messiac24/
 | `GET`  | `/health` | Kubernetes-compatible liveness probe |
 
 ---
-
-## 📜 License
-
-Distributed under the MIT License. See `LICENSE` for more information.
-
-> **Note:** The data sets used for training the Machine Learning models are proprietary. The pre-trained weights provided are for demonstration purposes within the Lâm Đồng geographic boundary.
