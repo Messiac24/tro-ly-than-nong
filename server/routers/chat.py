@@ -1,5 +1,6 @@
 import os
 import re
+import logging
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -20,12 +21,32 @@ from ml.inference import predict_risk, predict_price, get_weather
 from ml.expert_rules import run_expert_check
 from config import LOCATION_MAPPING
 
+try:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+except ImportError:
+    ChatGoogleGenerativeAI = None
+
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/api",
     tags=["Chat"],
 )
+
+# Gemini Configuration
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+gemini_llm = None
+if GEMINI_API_KEY and ChatGoogleGenerativeAI:
+    gemini_llm = ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=GEMINI_API_KEY,
+        temperature=0.3,
+        max_output_tokens=2048,
+        max_retries=1,
+        timeout=15
+    )
 
 # LM Studio Configuration
 LM_STUDIO_URL = os.getenv("LM_STUDIO_URL", "http://127.0.0.1:1234/v1")
@@ -73,14 +94,18 @@ async def _get_rag_response(query: str) -> str:
     if any(k in query_lower for k in forbidden):
         return "Xin lỗi, tôi chỉ hỗ trợ các vấn đề về kỹ thuật canh tác nông nghiệp tại Lâm Đồng."
 
-    # Giảm top_k để tiết kiệm token và tránh Rate Limit cho tài khoản free
-    context = rag_engine.get_relevant_context(query, top_k=3)
+    # Tăng top_k lên 5 để lấy ngữ cảnh đầy đủ hơn
+    context = rag_engine.get_relevant_context(query, top_k=5)
     
     # Nếu context quá yếu, AI vẫn nên cố gắng trả lời dựa trên kiến thức chung của nó
     # nhưng kèm theo cảnh báo là không tìm thấy trong tài liệu nội bộ.
     context_str = context if context else "Không có dữ liệu cụ thể trong sổ tay kỹ thuật."
+    
+    # Tối ưu context an toàn cho Gemini (Giới hạn 8000 ký tự - tương đương ~2000 tokens)
+    if len(context_str) > 8000:
+        context_str = context_str[:8000] + "\n...[Nội dung đã được cắt giảm]..."
 
-    if API_KEY_VAL.startswith("AIza") and llm:
+    if gemini_llm:
         prompt = ChatPromptTemplate.from_messages([
             ("system", (
                 "Bạn là 'Trợ Lý Thần Nông' - chuyên gia nông nghiệp tại Lâm Đồng.\n"
@@ -89,20 +114,27 @@ async def _get_rag_response(query: str) -> str:
                 "QUY TẮC:\n"
                 "1. Ưu tiên thông tin trong NGỮ CẢNH.\n"
                 "2. Nếu không có trong NGỮ CẢNH, hãy dùng kiến thức chuyên gia nhưng báo rõ: 'Dựa trên kinh nghiệm chung...'.\n"
-                "3. TRẢ LỜI NGẮN GỌN, cô đọng, dùng gạch đầu dòng (Tối đa 150-200 từ).\n"
+                "3. Giải thích chi tiết, cụ thể, phân tích rõ ràng thành các đoạn hoặc gạch đầu dòng.\n"
                 "4. Luôn chúc bà con mùa màng bội thu.\n"
                 "5. KHÔNG trả lời vấn đề ngoài nông nghiệp."
             )),
             ("human", "{query}")
         ])
-        chain = prompt | llm | StrOutputParser()
+        chain = prompt | gemini_llm | StrOutputParser()
         try:
             res = await chain.ainvoke({"query": query, "context": context_str})
-            if res: return res
+            if res:
+                res = re.sub(r'<thought>.*?</thought>', '', res, flags=re.DOTALL)
+                return res.strip()
         except Exception as e:
-            print(f"LLM Error: {e}")
-            pass
-    elif llm_client:
+            error_msg = str(e).lower()
+            if "429" in error_msg or "quota" in error_msg or "rate limit" in error_msg or "resourceexhausted" in error_msg:
+                logger.warning(f"Gemini Rate Limit hit: {e}")
+                return "⚠️ **Hệ thống AI đang bị quá tải (vượt giới hạn 5 câu hỏi/phút).**\nVui lòng chờ khoảng 1 phút rồi đặt câu hỏi lại để tiếp tục nhận tư vấn nhé!"
+            logger.error(f"Gemini API Error: {e}", exc_info=True)
+            # Fallback to LM Studio
+
+    if llm_client:
         try:
             response = await llm_client.chat.completions.create(
                 model=CHAT_MODEL,
@@ -133,12 +165,24 @@ async def _get_rag_response(query: str) -> str:
                 return res
         except Exception as e:
             # Fallback cuối cùng: Trả về trực tiếp thông tin từ RAG nếu AI quá tải
-            print(f"Chat API Error: {e}")
+            logger.error(f"Chat API Error: {e}", exc_info=True)
             if not context:
                 return "Rất tiếc, hệ thống chưa tìm thấy thông tin kỹ thuật cụ thể. Bà con có thể thử hỏi lại với tên loại cây cụ thể (VD: bệnh rỉ sắt trên cà phê) nhé!"
                 
             clean_context = context.replace(" . . .", "").replace("...", "").strip()
-            return "⚠️ AI đang bận, tôi xin trích dẫn trực tiếp từ tài liệu kỹ thuật để bà con tham khảo ngay:\n\n" + clean_context + "\n\n(Lưu ý: Đây là dữ liệu gốc từ sổ tay hướng dẫn)."
+            clean_context = re.sub(r'\s+', ' ', clean_context)
+            if len(clean_context) > 400:
+                clean_context = clean_context[:400] + "..."
+            return f"⚠️ AI đang bận, tôi xin trích dẫn một đoạn ngắn từ tài liệu kỹ thuật:\n\n> {clean_context}\n\n*(Lưu ý: Do AI đang bận, đây là dữ liệu thô chưa qua xử lý nên có thể khó đọc. Vui lòng thử lại sau 1 phút)*"
+    else:
+        logger.error("No LLM client configured!")
+        if context:
+            clean_context = context.replace(" . . .", "").replace("...", "").strip()
+            clean_context = re.sub(r'\s+', ' ', clean_context)
+            if len(clean_context) > 400:
+                clean_context = clean_context[:400] + "..."
+            return f"⚠️ AI đang bận, tôi xin trích dẫn một đoạn ngắn từ tài liệu kỹ thuật:\n\n> {clean_context}\n\n*(Lưu ý: Do AI đang bận, đây là dữ liệu thô chưa qua xử lý nên có thể khó đọc. Vui lòng thử lại sau 1 phút)*"
+        return "Rất tiếc, hệ thống đang bảo trì phần tư vấn tự động."
 
 def _run_finance_simulation(crop: str, capital: float, area_ha: float, location: str, mode: str) -> str:
     loc_info = LOCATION_MAPPING.get(location, LOCATION_MAPPING["Phường B'Lao"])
@@ -207,7 +251,7 @@ async def chat(request: ChatRequest, current_user: models.User = Depends(get_cur
         
         return ChatResponse(answer=answer, suggestions=suggestions)
     except Exception as e:
-        print(f"Chat Error: {e}")
+        logger.error(f"Chat Error: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Lỗi hệ thống")
 
 @router.get("/chat/history")

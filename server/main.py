@@ -4,6 +4,11 @@ Tro Ly Than Nong - API Server
 
 import sys
 import os
+import logging
+from contextlib import asynccontextmanager
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 # Setup path
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,17 +27,9 @@ if hasattr(sys.stdout, 'reconfigure'):
 if hasattr(sys.stderr, 'reconfigure'):
     sys.stderr.reconfigure(encoding='utf-8')
 
-app = FastAPI(
-    title="Trợ Lý Thần Nông",
-    version="1.0.0",
-)
-
-# Init db
-models.Base.metadata.create_all(bind=engine)
-
-# Default admin
 from database import SessionLocal
 import bcrypt
+
 def init_admin():
     db = SessionLocal()
     try:
@@ -40,7 +37,8 @@ def init_admin():
         existing = db.query(models.User).filter(models.User.username == admin_username).first()
         if not existing:
             salt = bcrypt.gensalt()
-            hashed = bcrypt.hashpw("admin123".encode('utf-8'), salt).decode('utf-8')
+            default_pwd = os.getenv("DEFAULT_ADMIN_PWD", "admin123")
+            hashed = bcrypt.hashpw(default_pwd.encode('utf-8'), salt).decode('utf-8')
             new_admin = models.User(
                 username=admin_username,
                 email="admin@thannong.ai",
@@ -51,20 +49,31 @@ def init_admin():
             )
             db.add(new_admin)
             db.commit()
-            print("System: Created default admin account.")
+            logger.info("System: Created default admin account.")
     except Exception as e:
-        print(f"Error initializing admin: {e}")
+        logger.error(f"Error initializing admin: {e}")
     finally:
         db.close()
 
-init_admin()
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting up application... Initializing database.")
+    models.Base.metadata.create_all(bind=engine)
+    init_admin()
+    yield
+    logger.info("Shutting down application...")
+
+app = FastAPI(
+    title="Trợ Lý Thần Nông",
+    version="1.0.0",
+    lifespan=lifespan,
+)
 
 # CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost", 
-        "http://localhost:80", 
         "http://localhost:8000",
         "http://localhost:8080",
         "http://127.0.0.1:8080"
@@ -81,7 +90,10 @@ from fastapi import Request
 from routers import predict, chat, auth, admin
 
 def get_real_ip(request: Request):
-    return request.headers.get("X-Forwarded-For", request.client.host)
+    x_forwarded = request.headers.get("X-Forwarded-For")
+    if x_forwarded:
+        return x_forwarded.split(",")[0].strip()
+    return request.client.host
 
 # Rate limiting
 limiter = Limiter(key_func=get_real_ip)
