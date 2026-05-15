@@ -1,5 +1,5 @@
 ---
-description: Lưu learnings từ conversation hiện tại vào .agents/learnings/ theo chủ đề
+description: Lưu learnings từ conversation hiện tại vào .agent/learning/ theo chủ đề
 ---
 
 # AI Learning Workflow
@@ -12,7 +12,7 @@ Trích xuất kiến thức từ conversation hiện tại và lưu vào **1 fil
 
 ### 1.1: Scan thư mục learnings
 
-AI **PHẢI** đọc danh sách file trong `.agents/learnings/` trước tiên để biết những feature nào đã có file.
+AI **PHẢI** đọc danh sách file trong `.agent/learning/` trước tiên để biết những feature nào đã có file.
 
 ### 1.2: Xác định feature từ conversation
 
@@ -47,7 +47,7 @@ AI quét toàn bộ conversation và phân loại thông tin có giá trị tái
 
 ## Bước 3: Merge & Ghi file
 
-### File path: `.agents/learnings/[feature-name].md`
+### File path: `.agent/learning/[feature-name].md`
 
 ### Nếu file CHƯA tồn tại → Tạo mới theo template:
 
@@ -120,7 +120,7 @@ AI quét toàn bộ conversation và phân loại thông tin có giá trị tái
 ## Bước 4: Báo kết quả
 
 ```
-✅ Đã lưu learnings vào: .agent/learnings/[feature-name].md
+✅ Đã lưu learnings vào: .agent/learning/[feature-name].md
    - Architecture: X entries
    - Bugs & Solutions: X entries
    - How-To: X entries

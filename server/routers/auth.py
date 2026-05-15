@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
@@ -8,7 +8,10 @@ from typing import Optional
 import os
 from dotenv import load_dotenv
 
+import secrets
 import schemas, models, database
+from mail_service import send_otp_email
+from limiter import limiter
 
 load_dotenv()
 
@@ -50,16 +53,16 @@ def register(user: schemas.UserCreate, db: Session = Depends(database.get_db)):
     if db_user:
         raise HTTPException(status_code=400, detail="Tên đăng nhập đã được sử dụng")
     
-    # Kiểm tra email đã tồn tại chưa (nếu có nhập)
-    if user.email:
-        db_email = db.query(models.User).filter(models.User.email == user.email).first()
-        if db_email:
-            raise HTTPException(status_code=400, detail="Email đã được đăng ký")
+    # Kiểm tra email đã tồn tại chưa (Bắt buộc) - Chuyển về chữ thường
+    email_lower = user.email.lower()
+    db_email = db.query(models.User).filter(models.User.email == email_lower).first()
+    if db_email:
+        raise HTTPException(status_code=400, detail="Email đã được đăng ký")
     
     hashed_password = get_password_hash(user.password)
     db_user = models.User(
         username=user.username,
-        email=user.email,
+        email=email_lower,
         hashed_password=hashed_password,
         full_name=user.full_name,
         role=user.role
@@ -91,6 +94,42 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         "full_name": user.full_name
     }
 
+@router.post("/forgot-password")
+@limiter.limit("3/10minutes")
+def forgot_password(request: Request, body: schemas.ForgotPasswordRequest, db: Session = Depends(database.get_db)):
+    email_lower = body.email.lower()
+    user = db.query(models.User).filter(models.User.email == email_lower).first()
+    if not user:
+        # Bảo mật: không báo lỗi nếu email không tồn tại
+        return {"message": "Nếu email tồn tại trong hệ thống, mã OTP sẽ được gửi đi."}
+    
+    # Tạo mã OTP 6 số an toàn bằng secrets
+    otp_code = ''.join(secrets.choice("0123456789") for _ in range(6))
+    user.otp_code = otp_code
+    user.otp_expiry = datetime.now(timezone.utc) + timedelta(minutes=10)
+    db.commit()
+    
+    send_otp_email(user.email, otp_code)
+    return {"message": "Mã OTP đã được gửi về email của bạn."}
+
+@router.post("/reset-password")
+@limiter.limit("5/10minutes")
+def reset_password(request: Request, body: schemas.ResetPasswordRequest, db: Session = Depends(database.get_db)):
+    email_lower = body.email.lower()
+    user = db.query(models.User).filter(models.User.email == email_lower).first()
+    if not user or user.otp_code != body.otp:
+        raise HTTPException(status_code=400, detail="Mã OTP không chính xác")
+    
+    if datetime.now(timezone.utc) > user.otp_expiry:
+        raise HTTPException(status_code=400, detail="Mã OTP đã hết hạn")
+    
+    user.hashed_password = get_password_hash(body.new_password)
+    user.otp_code = None
+    user.otp_expiry = None
+    db.commit()
+    
+    return {"message": "Đặt lại mật khẩu thành công. Vui lòng đăng nhập lại."}
+
 # Dependency để lấy user hiện tại từ token
 async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)):
     credentials_exception = HTTPException(
@@ -110,3 +149,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     if user is None:
         raise credentials_exception
     return user
+
+@router.post("/change-password")
+def change_password(body: schemas.ChangePasswordRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
+    # Kiểm tra mật khẩu cũ
+    if not verify_password(body.old_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Mật khẩu cũ không chính xác")
+    
+    # Cập nhật mật khẩu mới
+    current_user.hashed_password = get_password_hash(body.new_password)
+    db.commit()
+    
+    return {"message": "Đổi mật khẩu thành công!"}

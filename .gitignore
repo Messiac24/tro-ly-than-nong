@@ -29,6 +29,8 @@ flutter_nongsan/generated/
 # Logs and databases
 *.log
 *.sqlite3
-server/data/chroma_db/
+*.db
+server/data/
 server/ml/hf_cache/
 scratch/
+.agent/learning/tmp/

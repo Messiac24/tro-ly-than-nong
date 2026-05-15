@@ -13,6 +13,8 @@ MIN_RELEVANCE_SCORE = 0.22
 # Giới hạn ký tự tối đa cho toàn bộ ngữ cảnh gửi lên LLM (tránh tràn Token)
 MAX_CONTEXT_CHARS = 4000 
 
+HF_CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "hf_cache")
+
 class KnowledgeBaseRetrieval:
     _instance = None
     _embeddings = None
@@ -27,8 +29,18 @@ class KnowledgeBaseRetrieval:
     def embeddings(self):
         """Lazy load embeddings model."""
         if self._embeddings is None:
-            print("🚀 Loading Embedding Model (all-MiniLM-L6-v2)...")
-            self._embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+            print(f"🚀 Loading Embedding Model (all-MiniLM-L6-v2) to {HF_CACHE_DIR}...")
+            if not os.path.exists(HF_CACHE_DIR):
+                os.makedirs(HF_CACHE_DIR, exist_ok=True)
+            try:
+                self._embeddings = HuggingFaceEmbeddings(
+                    model_name="all-MiniLM-L6-v2",
+                    cache_folder=HF_CACHE_DIR
+                )
+            except Exception as e:
+                print(f"❌ Lỗi khởi tạo Embeddings: {e}")
+                # Fallback to local model path if needed or re-raise
+                raise e
         return self._embeddings
 
     @property

@@ -16,6 +16,8 @@ class User(Base):
     full_name = Column(String)
     role = Column(String, default="farmer") # "farmer" or "admin"
     is_active = Column(Boolean, default=True)
+    otp_code = Column(String, nullable=True)
+    otp_expiry = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     # Quan hệ với lịch sử tra cứu và chat

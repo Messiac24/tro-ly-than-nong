@@ -1,5 +1,5 @@
 ---
-description: Tự động load learnings từ .agents/learnings/ ở đầu mỗi session
+description: Tự động load learnings từ .agent/learning/ ở đầu mỗi session
 globs: "**/*.{kt,java,xml,gradle,kts}"
 trigger: always_on
 ---
@@ -13,7 +13,7 @@ Rule này áp dụng **tự động** mỗi khi bắt đầu một session hoặ
 
 ### Đầu mỗi session, AI PHẢI:
 
-1. **Đọc danh sách file** trong `.agents/learnings/` (chỉ tên file, KHÔNG đọc nội dung).
+1. **Đọc danh sách file** trong `.agent/learning/` (chỉ tên file, KHÔNG đọc nội dung).
 
 2. **Xác định** file nào liên quan đến task/câu hỏi hiện tại dựa trên tên file.
    - Ví dụ: task về notification → đọc `notification.md`

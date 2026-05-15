@@ -12,6 +12,12 @@
 - **Chi tiết**: Kết hợp FastAPI (REST), SQLite (dữ liệu quan hệ, người dùng) và ChromaDB (Vector Search cho RAG). Cấu trúc tách biệt `server` và `client`, giao tiếp qua API.
 - **Files liên quan**: `server/main.py`, `server/database.py`, `server/ml/rag_engine.py`
 
+### Domain-Specific Decision Engine
+- **Ngày**: 2026-05-15
+- **Chi tiết**: Tích hợp tầng logic chuyên gia (Expert Rules) để kiểm soát kết quả AI. Decision Engine tính toán ROI, năng suất thực tế dựa trên các biến số môi trường (độ cao, nhiệt độ, lượng mưa) và kịch bản canh tác (Kiến thiết vs Kinh doanh).
+- **Files liên quan**: `server/ml/decision_engine.py`, `server/ml/expert_rules.py`
+
+
 ### Docker Compose Deployment
 - **Ngày**: 2026-05-13
 - **Chi tiết**: Dùng docker-compose chạy song song 2 container: Backend (Uvicorn) port 8000 và Frontend (Nginx) port 80. Toàn bộ state (SQLite, ChromaDB) phải được mount ra volume ngoài ở `/app/server/data` để không mất dữ liệu.
@@ -74,3 +80,9 @@
   expire = datetime.now(timezone.utc) + timedelta(minutes=15)
   ```
 - **Files liên quan**: `server/routers/auth.py`
+
+### Singleton for Resource-Heavy Services
+- **Ngày**: 2026-05-15
+- **Chi tiết**: Các service nặng như `KnowledgeBaseRetrieval` (RAG Engine) sử dụng pattern Singleton và Lazy Loading để tránh việc load lại model Embeddings (300MB+) nhiều lần gây tốn RAM.
+- **Files liên quan**: `server/ml/rag_engine.py`
+

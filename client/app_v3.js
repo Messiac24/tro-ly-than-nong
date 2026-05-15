@@ -6,9 +6,7 @@
 // ── Cấu hình ─────────────────────────────────────────────────
 const CONFIG = {
     // Tự động sử dụng localhost nếu đang chạy máy ảo, hoặc dùng domain hiện tại nếu deploy chung
-    API_BASE_URL: window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost' 
-        ? "http://127.0.0.1:8000/api" 
-        : "api", 
+    API_BASE_URL: window.location.origin + "/api",
     API_KEY: "dev-key-ai-nong-san-2026",
     SIMULATED_DELAY: 2000, 
 };
@@ -360,6 +358,7 @@ function updateCapitalValue() {
     const unitDisplay = document.querySelector('#capital-display .slider-unit');
     const val = parseFloat(slider.value);
     
+    // Update text
     if (val >= 1000000000) {
         display.textContent = (val / 1000000000).toFixed(1);
         if (unitDisplay) unitDisplay.textContent = 'tỷ VND';
@@ -368,8 +367,11 @@ function updateCapitalValue() {
         if (unitDisplay) unitDisplay.textContent = 'triệu VND';
     }
 
-    // Live update finance chart khi kéo slider
-    // Không update ở đây vì cần tính lại từ API
+    // Dynamic track coloring for "Premium" look
+    const min = slider.min || 0;
+    const max = slider.max || 100;
+    const percentage = (val - min) / (max - min) * 100;
+    slider.style.backgroundSize = percentage + '% 100%';
 }
 
 function showError(msg) {
@@ -895,6 +897,18 @@ function addMessage(role, text) {
 
 // ── Auth Logic ───────────────────────────────────────────────
 
+function closeChangePasswordModal() {
+    const modal = document.getElementById('change-password-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        // Reset form
+        const form = document.getElementById('change-password-form');
+        if (form) form.reset();
+        const errorMsg = document.getElementById('change-password-error');
+        if (errorMsg) errorMsg.classList.add('hidden');
+    }
+}
+
 function initAuthListeners() {
     const tabLogin = document.getElementById('tab-login');
     const tabRegister = document.getElementById('tab-register');
@@ -919,6 +933,139 @@ function initAuthListeners() {
     loginForm.addEventListener('submit', handleLogin);
     registerForm.addEventListener('submit', handleRegister);
     logoutBtn.addEventListener('click', logout);
+
+    // Mới: Sự kiện đổi mật khẩu
+    document.getElementById('change-pwd-btn')?.addEventListener('click', openChangePasswordModal);
+    document.getElementById('change-password-form')?.addEventListener('submit', handleChangePassword);
+
+    // Forgot Password Flow
+    const showForgotBtn = document.getElementById('show-forgot-btn');
+    const backToLoginBtns = document.querySelectorAll('.back-to-login');
+    const forgotForm = document.getElementById('forgot-password-form');
+    const resetForm = document.getElementById('reset-password-form');
+
+    showForgotBtn?.addEventListener('click', () => {
+        loginForm.classList.add('hidden');
+        registerForm.classList.add('hidden');
+        forgotForm.classList.remove('hidden');
+        document.getElementById('auth-error').classList.add('hidden');
+    });
+
+    backToLoginBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            forgotForm.classList.add('hidden');
+            resetForm.classList.add('hidden');
+            registerForm.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            document.getElementById('auth-error').classList.add('hidden');
+        });
+    });
+
+    forgotForm?.addEventListener('submit', handleForgotPassword);
+    resetForm?.addEventListener('submit', handleResetPassword);
+}
+
+async function handleForgotPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('forgot-email').value;
+    const errorMsg = document.getElementById('auth-error');
+    const forgotForm = document.getElementById('forgot-password-form');
+    const resetForm = document.getElementById('reset-password-form');
+
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/auth/forgot-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: email })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Không thể gửi yêu cầu");
+
+        alert(data.message);
+        document.getElementById('reset-email-display').value = email;
+        forgotForm.classList.add('hidden');
+        resetForm.classList.remove('hidden');
+        errorMsg.classList.add('hidden');
+    } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.remove('hidden');
+    }
+}
+
+// ── Đổi mật khẩu (Cho người đang đăng nhập) ───────────────────
+function openChangePasswordModal() {
+    document.getElementById('change-password-modal').classList.remove('hidden');
+    document.getElementById('user-dropdown').classList.add('hidden');
+}
+
+function closeChangePasswordModal() {
+    document.getElementById('change-password-modal').classList.add('hidden');
+    document.getElementById('change-password-form').reset();
+    document.getElementById('change-password-error').classList.add('hidden');
+}
+
+async function handleChangePassword(e) {
+    e.preventDefault();
+    const oldPassword = document.getElementById('change-old-password').value;
+    const newPassword = document.getElementById('change-new-password').value;
+    const confirmPassword = document.getElementById('change-confirm-password').value;
+    const errorMsg = document.getElementById('change-password-error');
+
+    if (newPassword !== confirmPassword) {
+        errorMsg.textContent = "Mật khẩu mới không khớp!";
+        errorMsg.classList.remove('hidden');
+        return;
+    }
+
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/auth/change-password`, {
+            method: 'POST',
+            headers: { 
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${state.user.token}`
+            },
+            body: JSON.stringify({
+                old_password: oldPassword,
+                new_password: newPassword
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Đổi mật khẩu thất bại");
+
+        alert("✅ Đổi mật khẩu thành công!");
+        closeChangePasswordModal();
+    } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.remove('hidden');
+    }
+}
+
+async function handleResetPassword(e) {
+    e.preventDefault();
+    const email = document.getElementById('reset-email-display').value;
+    const otp = document.getElementById('reset-otp').value;
+    const newPassword = document.getElementById('reset-password').value;
+    const errorMsg = document.getElementById('auth-error');
+
+    try {
+        const response = await fetch(`${CONFIG.API_BASE_URL}/auth/reset-password`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: email,
+                otp: otp,
+                new_password: newPassword
+            })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.detail || "Đặt lại mật khẩu thất bại");
+
+        alert(data.message);
+        location.reload(); // Quay lại trang login mặc định
+    } catch (err) {
+        errorMsg.textContent = err.message;
+        errorMsg.classList.remove('hidden');
+    }
 }
 
 async function handleLogin(e) {
@@ -1019,6 +1166,13 @@ function applyAuthState() {
         
         displayUserName.textContent = state.user.full_name;
         displayUserRole.textContent = state.user.role === 'admin' ? 'Quản trị viên' : 'Nông dân';
+
+        // Cập nhật Avatar chữ cái
+        const firstLetter = state.user.full_name ? state.user.full_name.charAt(0).toUpperCase() : 'U';
+        const headerLetter = document.getElementById('header-avatar-letter');
+        const dropdownLetter = document.getElementById('dropdown-avatar-letter');
+        if (headerLetter) headerLetter.textContent = firstLetter;
+        if (dropdownLetter) dropdownLetter.textContent = firstLetter;
         
         if (state.user.role === 'admin') {
             displayUserRole.classList.add('bg-orange-600');

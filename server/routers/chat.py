@@ -2,7 +2,7 @@ import os
 import re
 import logging
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from pydantic import BaseModel, Field
@@ -30,6 +30,7 @@ except ImportError:
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+from limiter import limiter
 
 router = APIRouter(
     prefix="/api",
@@ -41,7 +42,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 gemini_llm = None
 if GEMINI_API_KEY and ChatGoogleGenerativeAI:
     gemini_llm = ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
+        model="gemini-1.5-flash",
         google_api_key=GEMINI_API_KEY,
         temperature=0.3,
         max_output_tokens=2048,
@@ -277,9 +278,10 @@ def _run_finance_simulation(crop: str, capital: float, area_ha: float, location:
     )
 
 @router.post("/chat", response_model=ChatResponse, dependencies=[Depends(verify_api_key)])
-async def chat(request: ChatRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
+@limiter.limit("30/minute")
+async def chat(request: Request, body: ChatRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
     try:
-        message = request.message.strip()
+        message = body.message.strip()
         if not message: return ChatResponse(answer="Bạn cần hỗ trợ gì không?", suggestions=["Kỹ thuật bón phân?", "Giá sầu riêng?"])
         
         msg_low = message.lower()
@@ -299,11 +301,11 @@ async def chat(request: ChatRequest, current_user: models.User = Depends(get_cur
             answer = "Rất vui được hỗ trợ bạn! Chúc bạn mùa màng thuận lợi. 🌾"
             suggestions = ["Hỏi về sâu bệnh", "Hỏi về giá cả"]
         elif intent == "finance":
-            crop = detect_crop_in_message(message) or (request.context.crop if request.context else "Sầu riêng Ri6")
-            loc = request.context.location if request.context else "Phường B'Lao"
-            cap = request.context.capital if request.context and request.context.capital else 200_000_000
-            area = request.context.area_ha if request.context and request.context.area_ha else 1.0
-            mode = request.context.mode if request.context and request.context.mode else "Kinh doanh"
+            crop = detect_crop_in_message(message) or (body.context.crop if body.context else "Sầu riêng Ri6")
+            loc = body.context.location if body.context else "Phường B'Lao"
+            cap = body.context.capital if body.context and body.context.capital else 200_000_000
+            area = body.context.area_ha if body.context and body.context.area_ha else 1.0
+            mode = body.context.mode if body.context and body.context.mode else "Kinh doanh"
             answer = _run_finance_simulation(crop, cap, area, loc, mode)
             suggestions = ["Rủi ro thời tiết?", "Kỹ thuật chăm sóc?"]
         else:
@@ -324,10 +326,11 @@ async def chat(request: ChatRequest, current_user: models.User = Depends(get_cur
         raise HTTPException(status_code=500, detail="Lỗi hệ thống")
 
 @router.post("/chat/stream", dependencies=[Depends(verify_api_key)])
-async def chat_stream(request: ChatRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
+@limiter.limit("30/minute")
+async def chat_stream(request: Request, body: ChatRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
     """Endpoint hỗ trợ Streaming response."""
     try:
-        message = request.message.strip()
+        message = body.message.strip()
         if not message:
             return StreamingResponse(iter(["Bạn cần tôi giúp gì?"]), media_type="text/plain")
             
@@ -340,11 +343,11 @@ async def chat_stream(request: ChatRequest, current_user: models.User = Depends(
             return StreamingResponse(iter(["Rất vui được giúp bà con!"]), media_type="text/plain")
         elif intent == "finance":
             # Logic finance hiện tại chưa hỗ trợ stream vì nó tính toán local nhanh
-            crop = detect_crop_in_message(message) or (request.context.crop if request.context else "Sầu riêng Ri6")
-            loc = request.context.location if request.context else "Phường B'Lao"
-            cap = request.context.capital if request.context and request.context.capital else 200_000_000
-            area = request.context.area_ha if request.context and request.context.area_ha else 1.0
-            mode = request.context.mode if request.context and request.context.mode else "Kinh doanh"
+            crop = detect_crop_in_message(message) or (body.context.crop if body.context else "Sầu riêng Ri6")
+            loc = body.context.location if body.context else "Phường B'Lao"
+            cap = body.context.capital if body.context and body.context.capital else 200_000_000
+            area = body.context.area_ha if body.context and body.context.area_ha else 1.0
+            mode = body.context.mode if body.context and body.context.mode else "Kinh doanh"
             answer = _run_finance_simulation(crop, cap, area, loc, mode)
             return StreamingResponse(iter([answer]), media_type="text/plain")
             

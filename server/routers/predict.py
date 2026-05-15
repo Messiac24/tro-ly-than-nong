@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.orm import Session
 import database, models
 from schemas import PredictRequest, PredictResponse
@@ -9,6 +9,7 @@ from ml.inference import predict_risk, predict_price, get_weather
 from ml.decision_engine import run_decision_engine
 from ml.expert_rules import run_expert_check
 import numpy as np
+from limiter import limiter
 
 router = APIRouter(
     prefix="/api",
@@ -21,7 +22,8 @@ router = APIRouter(
     summary="Phân tích AI dự báo canh tác & giá nông sản",
     dependencies=[Depends(verify_api_key), Depends(get_current_user)],
 )
-async def predict(request: PredictRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
+@limiter.limit("60/minute")
+async def predict(request: Request, body: PredictRequest, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
     """
     Luồng xử lý chính:
     1. Kiểm tra rủi ro (Module 2).
@@ -29,7 +31,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
     3. Nếu rủi ro thấp (< 2) -> Dự báo giá (Module 1) và Decision Engine (Module 3).
     """
     # 1. Tra cứu thông tin vùng
-    loc_name = request.location
+    loc_name = body.location
     if loc_name not in LOCATION_MAPPING:
         raise HTTPException(status_code=422, detail="Vùng canh tác không hợp lệ")
     
@@ -38,7 +40,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
     
     # 2. ── EXPERT RULES: Kiểm tra Luật Sinh thái Cứng TRƯỚC Random Forest ──
     expert = run_expert_check(
-        crop_name=request.crop,
+        crop_name=body.crop,
         location_name=loc_name,
         elevation=loc_info["elevation"],
         temp_max=weather["temp_max"],
@@ -49,7 +51,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
     # Nếu vi phạm sinh thái nghiêm trọng (ĐỎ 🔴 risk_level == 2) → Short-circuit ngay
     if expert["ecology_violation"] and expert["ecology_violation"]["risk_level"] == 2:
         violation = expert["ecology_violation"]
-        alts = [c for c in CROP_ALTERNATIVES.get(loc_name, []) if c != request.crop]
+        alts = [c for c in CROP_ALTERNATIVES.get(loc_name, []) if c != body.crop]
         
         return PredictResponse(
             status="success",
@@ -71,7 +73,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
         )
     
     # 3. Đánh giá rủi ro bằng Random Forest (Module 2) – chỉ khi ecology OK
-    risk_level, risk_proba = predict_risk(loc_name, request.crop)
+    risk_level, risk_proba = predict_risk(loc_name, body.crop)
     
     # Nếu có vi phạm sinh thái mức VÀNG 🟡 (warning) → nâng risk_level
     if expert["ecology_violation"] and expert["ecology_violation"]["risk_level"] == 1:
@@ -88,7 +90,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
         # Dùng message từ expert rules (chính xác hơn)
         risk_message = expert["ecology_violation"]["message"]
     elif risk_level == 2:
-        risk_message = f"CẢNH BÁO: {request.crop} gặp rủi ro cao tại {loc_name}. Vui lòng xem xét cây trồng thay thế."
+        risk_message = f"CẢNH BÁO: {body.crop} gặp rủi ro cao tại {loc_name}. Vui lòng xem xét cây trồng thay thế."
     elif risk_level == 1:
         risk_message = "CHÚ Ý: Có rủi ro thời tiết trung bình. Cần theo dõi sát sao."
         
@@ -103,7 +105,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
 
     # Short-circuit cho risk_level == 2 từ Random Forest
     if risk_level == 2:
-        alts = [c for c in CROP_ALTERNATIVES.get(loc_name, []) if c != request.crop]
+        alts = [c for c in CROP_ALTERNATIVES.get(loc_name, []) if c != body.crop]
         
         return PredictResponse(
             status="success",
@@ -136,17 +138,17 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
     }
     
     cur_price = 50000 # Default fallback
-    if request.crop in csv_map:
-        csv_path = os.path.join(data_dir, csv_map[request.crop])
+    if body.crop in csv_map:
+        csv_path = os.path.join(data_dir, csv_map[body.crop])
         if os.path.exists(csv_path):
             df_recent = pd.read_csv(csv_path)
             if not df_recent.empty:
                 cur_price = float(df_recent.sort_values(by='date').iloc[-1]['price_vnd'])
-    elif "Cà phê" in request.crop:
+    elif "Cà phê" in body.crop:
         # Giả định giá cà phê hiện tại (có thể fetch từ Yahoo Finance trong thực tế)
-        cur_price = 120000 if "Robusta" in request.crop else 150000
+        cur_price = 120000 if "Robusta" in body.crop else 150000
     
-    forecast_data = predict_price(request.crop, cur_price, loc_name)
+    forecast_data = predict_price(body.crop, cur_price, loc_name)
     
     # Tính toán trend
     pred_30d = forecast_data[-1]["predicted"]
@@ -155,15 +157,15 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
     
     # 5. Chạy Decision Engine (Module 3)
     decision = run_decision_engine(
-        crop_name=request.crop,
+        crop_name=body.crop,
         risk_level=risk_level,
         current_price=cur_price,
         predicted_price=pred_30d,
-        capital=request.capital,
-        area_ha=request.area_ha,
+        capital=body.capital,
+        area_ha=body.area_ha,
         temp_min=weather["temp_min"],
         precipitation=weather["precipitation"],
-        mode=request.mode,
+        mode=body.mode,
         ecology_violation=expert["ecology_violation"]  # ★ Truyền vi phạm sinh thái để kích hoạt Price Penalty
     )
     
@@ -174,11 +176,11 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
     # Đánh giá nhiệt độ cho cây trồng (có tham chiếu expert rules)
     temp_assessment = ""
     if weather["temp_max"] >= 25 and weather["temp_max"] <= 32:
-        temp_assessment = f"nằm trong ngưỡng sinh thái lý tưởng cho {request.crop}"
+        temp_assessment = f"nằm trong ngưỡng sinh thái lý tưởng cho {body.crop}"
     elif weather["temp_max"] > 32:
-        temp_assessment = f"hơi cao, cần chú ý tưới mát cho {request.crop}"
+        temp_assessment = f"hơi cao, cần chú ý tưới mát cho {body.crop}"
     else:
-        temp_assessment = f"đạt mức chấp nhận được cho {request.crop}"
+        temp_assessment = f"đạt mức chấp nhận được cho {body.crop}"
     
     # Đánh giá lượng mưa
     rain_assessment = ""
@@ -197,11 +199,11 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
     # ── Đánh giá độ cao + sinh thái (KHÔNG hardcode "phù hợp") ──
     # Kiểm tra xem cây trồng có nằm trong danh sách phù hợp của vùng không
     suitable_crops = loc_info.get("suitable_crops", [])
-    if request.crop in suitable_crops:
-        elevation_assessment = f"Độ cao {loc_info['elevation']}m phù hợp với sinh thái của {request.crop}"
+    if body.crop in suitable_crops:
+        elevation_assessment = f"Độ cao {loc_info['elevation']}m phù hợp với sinh thái của {body.crop}"
     else:
         # Có vi phạm ecology nhưng chỉ ở mức warning (đã qua short-circuit danger)
-        elevation_assessment = f"Độ cao {loc_info['elevation']}m KHÔNG LÝ TƯỞNG cho {request.crop} – cần lưu ý rủi ro"
+        elevation_assessment = f"Độ cao {loc_info['elevation']}m KHÔNG LÝ TƯỞNG cho {body.crop} – cần lưu ý rủi ro"
     
     # Nếu có ecology warning từ expert rules, thêm vào reasoning
     ecology_note = ""
@@ -221,7 +223,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
         formatted_actual_pred = f"{actual_pred_price:,.0f}".replace(",", ".")
         
         price_line = (
-            f"⚠️ Cảnh báo Giá thu mua: Dù giá thị trường của {request.crop} chuẩn là "
+            f"⚠️ Cảnh báo Giá thu mua: Dù giá thị trường của {body.crop} chuẩn là "
             f"{formatted_cur_price}đ/kg, nhưng do trồng sai vùng ({loc_name}), "
             f"sản phẩm bị giáng cấp. Giá thu mua thực tế của bạn bị ép xuống chỉ còn "
             f"~{formatted_actual_cur} VNĐ/kg."
@@ -242,9 +244,9 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
     )
     
     # ── Sinh lời khuyên giá theo mode ──
-    if request.mode == "Kiến thiết":
+    if body.mode == "Kiến thiết":
         price_advice = (
-            f"⏳ Khuyến cáo: {request.crop} cần 3–5 năm mới cho thu hoạch. "
+            f"⏳ Khuyến cáo: {body.crop} cần 3–5 năm mới cho thu hoạch. "
             f"Dự báo giá ngắn hạn không áp dụng cho giai đoạn này. "
             f"Vui lòng tham khảo Phân tích Tài chính dài hạn bên cạnh."
         )
@@ -252,17 +254,17 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
         # Mode Kinh doanh: sinh text gợi ý chốt giá
         if trend_pct > 0:
             price_advice = (
-                f"📈 Giá {request.crop} dự báo tăng {abs(trend_pct):.1f}% vào tháng tới. "
+                f"📈 Giá {body.crop} dự báo tăng {abs(trend_pct):.1f}% vào tháng tới. "
                 f"Nông dân cân nhắc thời điểm chốt giá bán hoặc trữ kho để tối ưu lợi nhuận."
             )
         elif trend_pct < -0.5:
             price_advice = (
-                f"📉 Giá {request.crop} dự báo giảm {abs(trend_pct):.1f}% trong 30 ngày tới. "
+                f"📉 Giá {body.crop} dự báo giảm {abs(trend_pct):.1f}% trong 30 ngày tới. "
                 f"Nên cân nhắc bán sớm hoặc chế biến sâu để giữ giá trị sản phẩm."
             )
         else:
             price_advice = (
-                f"📊 Giá {request.crop} dự báo ổn định trong 30 ngày tới. "
+                f"📊 Giá {body.crop} dự báo ổn định trong 30 ngày tới. "
                 f"Thị trường không có biến động lớn, có thể bán hàng theo kế hoạch."
             )
     
@@ -320,10 +322,10 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
         ],
     }
     
-    specific_checklist.extend(crop_specific.get(request.crop, ACTION_CHECKLIST['normal']))
+    specific_checklist.extend(crop_specific.get(body.crop, ACTION_CHECKLIST['normal']))
     
     # ── Xử lý forecast theo mode ──
-    if request.mode == "Kiến thiết":
+    if body.mode == "Kiến thiết":
         # Trồng mới: KHÔNG trả forecast giá ngắn hạn
         price_forecast_data = None
     else:
@@ -343,7 +345,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
             adjusted_trend_str = "up" if adjusted_trend_pct > 0.5 else "down" if adjusted_trend_pct < -0.5 else "stable"
             
             price_forecast_data = {
-                "crop": request.crop,
+                "crop": body.crop,
                 "unit": "VND/kg (giá thu mua thực tế - đã giáng cấp)",
                 "current_price": adjusted_cur_price,
                 "trend": adjusted_trend_str,
@@ -353,7 +355,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
             }
         else:
             price_forecast_data = {
-                "crop": request.crop,
+                "crop": body.crop,
                 "unit": "VND/kg",
                 "current_price": cur_price,
                 "trend": trend_str,
@@ -370,10 +372,10 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
         new_history = models.SearchHistory(
             user_id=current_user.id,
             location=loc_name,
-            crop=request.crop,
-            mode=request.mode,
-            capital=request.capital,
-            area_ha=request.area_ha,
+            crop=body.crop,
+            mode=body.mode,
+            capital=body.capital,
+            area_ha=body.area_ha,
             risk_level=risk_level_str,
             recommendation=decision["production_decision"]["recommendation"]
         )
@@ -405,7 +407,7 @@ async def predict(request: PredictRequest, current_user: models.User = Depends(g
             "reasoning": decision["production_decision"]["reasoning"]
         },
         financial_analysis=decision["financial_analysis"],
-        farming_mode=request.mode,
+        farming_mode=body.mode,
         price_advice=price_advice,
         fertilizer_advice=fertilizer_advice
     )

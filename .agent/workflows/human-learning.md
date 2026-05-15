@@ -18,7 +18,7 @@ AI quét toàn bộ conversation hiện tại, xác định:
 
 ## Bước 2: Viết file learning
 
-Tạo file tại: `.agents/learnings/human/FOR_DEVELOPER_YYYY-MM-DD_[tên-task-ngắn].md`
+Tạo file tại: `.agent/learning/human/FOR_DEVELOPER_YYYY-MM-DD_[tên-task-ngắn].md`
 
 File **PHẢI** bao gồm đầy đủ 9 phần sau, viết bằng giọng văn tự nhiên, dùng ví dụ thực tế và analogies:
 

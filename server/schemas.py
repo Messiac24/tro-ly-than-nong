@@ -245,6 +245,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    email: EmailStr
 
 class User(UserBase):
     id: int
@@ -266,3 +267,19 @@ class TokenData(BaseModel):
 class LoginRequest(BaseModel):
     username: str  # Đăng nhập bằng username
     password: str
+
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str
+
+class ResetPasswordRequest(BaseModel):
+    email: EmailStr
+    otp: str
+    new_password: str
+
+class ChangePasswordRequest(BaseModel):
+    old_password: str
+    new_password: str

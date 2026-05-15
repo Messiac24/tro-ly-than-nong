@@ -14,7 +14,7 @@ Trước khi code bất kỳ thứ gì, AI **PHẢI** thực hiện quy trình b
 
 ### Bước 1.1: Load Learnings liên quan
 
-1. Đọc tất cả file trong `.agents/learnings/`:
+1. Đọc tất cả file trong `.agent/learning/`:
    - `patterns.md` — Coding patterns & conventions
    - `architecture.md` — Quyết định kiến trúc
    - `bugs-solutions.md` — Bugs đã gặp & cách fix

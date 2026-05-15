@@ -11,10 +11,13 @@
     <!-- Google Fonts: Be Vietnam Pro + JetBrains Mono -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
     <!-- TailwindCSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -28,22 +31,30 @@
         
         <header class="user-header hidden" id="user-header">
             <button id="user-menu-toggle" class="user-menu-btn" aria-label="Mở menu người dùng">
-                <span class="user-avatar">👤</span>
+                <span class="user-letter-avatar mini" id="header-avatar-letter">H</span>
                 <span class="menu-icon">☰</span>
             </button>
             
             <div class="user-dropdown hidden" id="user-dropdown">
-                <div class="dropdown-info">
-                    <span class="user-name" id="display-user-name">Người dùng</span>
-                    <span class="user-role-badge" id="display-user-role">Nông dân</span>
+                <div class="dropdown-header">
+                    <div class="user-letter-avatar large" id="dropdown-avatar-letter">H</div>
+                    <div class="user-meta">
+                        <span class="user-name" id="display-user-name">Người dùng</span>
+                        <span class="user-role-badge" id="display-user-role">Nông dân</span>
+                    </div>
                 </div>
                 <hr class="dropdown-divider">
-                <a href="admin.html" id="admin-link" class="dropdown-item hidden">
-                    Dashboard Quản trị
-                </a>
-                <button id="logout-btn" class="dropdown-item text-danger">
-                    Đăng xuất
-                </button>
+                <div class="dropdown-menu">
+                    <a href="admin.html" id="admin-link" class="dropdown-item hidden">
+                        <i class="fas fa-chart-line"></i> Dashboard Quản trị
+                    </a>
+                    <button id="change-pwd-btn" class="dropdown-item">
+                        <i class="fas fa-key"></i> Đổi mật khẩu
+                    </button>
+                    <button id="logout-btn" class="dropdown-item text-danger">
+                        <i class="fas fa-sign-out-alt"></i> Đăng xuất
+                    </button>
+                </div>
             </div>
         </header>
 
@@ -99,7 +110,7 @@
 
                     <div class="form-group">
                         <label for="capital-slider" class="form-label">
-                            💰 Ngân sách khả dụng <span class="text-xs text-muted font-normal">(Tối đa 10 tỷ)</span>
+                            💰 Ngân sách khả dụng <span class="text-xs font-semibold opacity-80" style="color: var(--color-primary);">(Tối đa 10 tỷ)</span>
                         </label>
                         <input
                             type="range"
@@ -320,6 +331,45 @@
                     <input type="password" id="login-password" class="form-input" placeholder="••••••••" data-testid="login-password" required>
                 </div>
                 <button type="submit" class="btn-auth" data-testid="login-submit">Đăng nhập</button>
+                <div class="mt-4 text-center">
+                    <button type="button" id="show-forgot-btn" class="text-leaf hover:underline text-sm font-medium">Quên mật khẩu?</button>
+                </div>
+            </form>
+
+            <!-- Quên mật khẩu: Nhập Email -->
+            <form id="forgot-password-form" class="auth-form hidden">
+                <h2 class="auth-title">Khôi phục mật khẩu 📧</h2>
+                <p class="text-sm text-gray-600 mb-4 text-center">Nhập email đã đăng ký để nhận mã xác nhận OTP.</p>
+                <div class="form-group">
+                    <label class="form-label">Email của bạn</label>
+                    <input type="email" id="forgot-email" class="form-input" placeholder="name@example.com" required>
+                </div>
+                <button type="submit" class="btn-auth">Gửi mã xác nhận</button>
+                <div class="mt-4 text-center">
+                    <button type="button" class="back-to-login text-leaf hover:underline text-sm font-medium">Quay lại đăng nhập</button>
+                </div>
+            </form>
+
+            <!-- Reset mật khẩu: Nhập OTP & Mật khẩu mới -->
+            <form id="reset-password-form" class="auth-form hidden">
+                <h2 class="auth-title">Đặt lại mật khẩu 🔑</h2>
+                <p class="text-sm text-gray-600 mb-4 text-center">Mã OTP đã được gửi về email bên dưới.</p>
+                <div class="form-group">
+                    <label class="form-label">Đang đặt lại cho email</label>
+                    <input type="email" id="reset-email-display" class="form-input bg-gray-100 cursor-not-allowed" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mã OTP (6 chữ số)</label>
+                    <input type="text" id="reset-otp" class="form-input text-center text-2xl tracking-widest" placeholder="123456" maxlength="6" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu mới</label>
+                    <input type="password" id="reset-password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn-auth">Xác nhận đổi mật khẩu</button>
+                <div class="mt-4 text-center">
+                    <button type="button" class="back-to-login text-leaf hover:underline text-sm font-medium">Hủy bỏ</button>
+                </div>
             </form>
 
             <form id="register-form" class="auth-form hidden">
@@ -347,6 +397,39 @@
         </div>
     </div>
 
+
+    <!-- Modal Đổi mật khẩu -->
+    <div id="change-password-modal" class="auth-modal hidden">
+        <div class="auth-card">
+            <button onclick="closeChangePasswordModal()" class="modal-close-x" aria-label="Đóng">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <form id="change-password-form" class="auth-form">
+                <h2 class="auth-title">
+                    <i class="fas fa-lock-alt mr-2"></i> Đổi mật khẩu
+                </h2>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu cũ</label>
+                    <input type="password" id="change-old-password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Mật khẩu mới</label>
+                    <input type="password" id="change-new-password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Xác nhận mật khẩu mới</label>
+                    <input type="password" id="change-confirm-password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <div class="mt-6">
+                    <button type="submit" class="btn-auth w-full">Cập nhật mật khẩu</button>
+                </div>
+                <p id="change-password-error" class="auth-error-msg hidden"></p>
+            </form>
+        </div>
+    </div>
 
     <div style="position: fixed; bottom: 5px; left: 5px; font-size: 10px; color: #999; z-index: 100;">v2.1 - Messiac24</div>
     <script src="app_v3.js?v=2.1"></script>
