@@ -42,6 +42,9 @@ WORKDIR /app/server
 
 # Setup HuggingFace Cache and Ingest Knowledge Base
 ENV HF_HOME=/app/server/ml/hf_cache
+# Create data directory and set permissions
+RUN mkdir -p /app/server/data && chmod 777 /app/server/data
+
 RUN python ingest_kb.py
 
 # Expose port
