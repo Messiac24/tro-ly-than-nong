@@ -9,51 +9,57 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 
 # Logic tìm nơi lưu trữ database có quyền ghi
 def get_database_url():
-    # 1. Ưu tiên biến môi trường nếu có
+    # 1. Xác định đường dẫn nguồn và đích
+    local_src_path = os.path.join(DATA_DIR, "nongsan_v2.sqlite3")
     env_url = os.getenv("DATABASE_URL")
+    
+    # 2. Xác định URL cuối cùng
+    final_url = None
+    
     if env_url:
         print(f"📡 Using database URL from environment: {env_url}")
-        # Đảm bảo thư mục cha tồn tại nếu là sqlite
-        if env_url.startswith("sqlite:///"):
-            db_path = env_url.replace("sqlite:///", "")
-            # Xử lý trường hợp 4 slashes (absolute path trên Unix)
-            if db_path.startswith("/"):
-                parent_dir = os.path.dirname(db_path)
-                if parent_dir and not os.path.exists(parent_dir):
-                    try:
-                        os.makedirs(parent_dir, exist_ok=True)
-                    except: pass
-        return env_url
-    
-    # 2. Thử ghi vào thư mục data local
-    local_db_path = os.path.join(DATA_DIR, "nongsan_v2.sqlite3")
-    try:
-        if not os.path.exists(DATA_DIR):
-            os.makedirs(DATA_DIR, exist_ok=True)
-        # Test quyền ghi bằng cách tạo file tạm
-        test_file = os.path.join(DATA_DIR, ".write_test")
-        with open(test_file, "w") as f:
-            f.write("test")
-        os.remove(test_file)
-        return f"sqlite:///{local_db_path}"
-    except Exception as e:
-        # 3. Fallback sang /tmp nếu local bị chặn (thường gặp trên Hugging Face)
-        print(f"⚠️ Local directory {DATA_DIR} is read-only or error: {e}")
+        final_url = env_url
+    else:
+        # Thử ghi vào thư mục data local
+        local_db_path = os.path.join(DATA_DIR, "nongsan_v2.sqlite3")
+        try:
+            if not os.path.exists(DATA_DIR):
+                os.makedirs(DATA_DIR, exist_ok=True)
+            # Test quyền ghi bằng cách tạo file tạm
+            test_file = os.path.join(DATA_DIR, ".write_test")
+            with open(test_file, "w") as f:
+                f.write("test")
+            os.remove(test_file)
+            final_url = f"sqlite:///{local_db_path}"
+        except Exception as e:
+            print(f"⚠️ Local directory {DATA_DIR} is read-only or error: {e}")
+            final_url = "sqlite:////tmp/nongsan_v2.sqlite3"
+
+    # 3. Logic sao chép dữ liệu (Pre-fill)
+    # Nếu URL là sqlite và trỏ tới /tmp, hãy kiểm tra để copy từ nguồn local
+    if final_url.startswith("sqlite:///"):
+        db_path = final_url.replace("sqlite:///", "")
         
-        tmp_db_path = "/tmp/nongsan_v2.sqlite3"
-        local_src_path = os.path.join(DATA_DIR, "nongsan_v2.sqlite3")
-        
-        # Nếu local có file sẵn (từ lúc build), hãy copy nó sang /tmp để không mất dữ liệu ban đầu
-        if os.path.exists(local_src_path) and not os.path.exists(tmp_db_path):
+        # Đảm bảo thư mục cha tồn tại
+        parent_dir = os.path.dirname(db_path)
+        if parent_dir and not os.path.exists(parent_dir):
             try:
-                import shutil
-                shutil.copy2(local_src_path, tmp_db_path)
-                print(f"✅ Pre-filled database copied from {local_src_path} to {tmp_db_path}")
-            except Exception as copy_err:
-                print(f"❌ Failed to copy pre-filled database: {copy_err}")
-                
-        print(f"🚀 Using ephemeral database at {tmp_db_path}")
-        return f"sqlite:///{tmp_db_path}"
+                os.makedirs(parent_dir, exist_ok=True)
+            except: pass
+            
+        # Nếu đích là /tmp và chưa có file, nhưng local có file thì copy sang
+        if "/tmp/" in db_path and not os.path.exists(db_path):
+            if os.path.exists(local_src_path):
+                try:
+                    import shutil
+                    shutil.copy2(local_src_path, db_path)
+                    # Cấp quyền cho file vừa copy
+                    os.chmod(db_path, 0o777)
+                    print(f"✅ Pre-filled database copied to {db_path}")
+                except Exception as copy_err:
+                    print(f"❌ Failed to copy pre-filled database: {copy_err}")
+    
+    return final_url
 
 SQLALCHEMY_DATABASE_URL = get_database_url()
 print(f"📡 Final Database URL: {SQLALCHEMY_DATABASE_URL}")
