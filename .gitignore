@@ -28,9 +28,13 @@ flutter_nongsan/generated/
 
 # Logs and databases
 *.log
-*.sqlite3
-*.db
-server/data/
+# *.sqlite3
+# *.db
+
+# Cho phép thư mục data nhưng loại trừ cache nặng
+!server/data/
+server/data/hf_cache/
+server/data/chroma_db/
 server/ml/hf_cache/
 scratch/
 .agent/learning/tmp/
