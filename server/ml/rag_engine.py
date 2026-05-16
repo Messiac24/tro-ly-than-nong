@@ -6,8 +6,16 @@ import re
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
-# Sử dụng /tmp cho Vector DB để đảm bảo quyền ghi trên Hugging Face
-CHROMA_DIR = "/tmp/chroma_db"
+# Logic tìm đường dẫn Vector DB
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+LOCAL_CHROMA_DIR = os.path.join(BASE_DIR, "data", "chroma_db")
+
+# Nếu thư mục local tồn tại (đã được tạo lúc build), ưu tiên dùng nó
+if os.path.exists(LOCAL_CHROMA_DIR):
+    CHROMA_DIR = LOCAL_CHROMA_DIR
+else:
+    # Fallback sang /tmp cho môi trường ephemeral
+    CHROMA_DIR = "/tmp/chroma_db"
 
 # Ngưỡng điểm tương đồng tối thiểu để giữ kết quả
 MIN_RELEVANCE_SCORE = 0.22
