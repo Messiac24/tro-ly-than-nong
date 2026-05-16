@@ -39,9 +39,21 @@ def get_database_url():
     except Exception as e:
         # 3. Fallback sang /tmp nếu local bị chặn (thường gặp trên Hugging Face)
         print(f"⚠️ Local directory {DATA_DIR} is read-only or error: {e}")
-        print("🚀 Falling back to /tmp/nongsan_v2.sqlite3")
-        # Đảm bảo /tmp tồn tại (thường luôn có trên Linux)
-        return "sqlite:////tmp/nongsan_v2.sqlite3"
+        
+        tmp_db_path = "/tmp/nongsan_v2.sqlite3"
+        local_src_path = os.path.join(DATA_DIR, "nongsan_v2.sqlite3")
+        
+        # Nếu local có file sẵn (từ lúc build), hãy copy nó sang /tmp để không mất dữ liệu ban đầu
+        if os.path.exists(local_src_path) and not os.path.exists(tmp_db_path):
+            try:
+                import shutil
+                shutil.copy2(local_src_path, tmp_db_path)
+                print(f"✅ Pre-filled database copied from {local_src_path} to {tmp_db_path}")
+            except Exception as copy_err:
+                print(f"❌ Failed to copy pre-filled database: {copy_err}")
+                
+        print(f"🚀 Using ephemeral database at {tmp_db_path}")
+        return f"sqlite:///{tmp_db_path}"
 
 SQLALCHEMY_DATABASE_URL = get_database_url()
 print(f"📡 Final Database URL: {SQLALCHEMY_DATABASE_URL}")
