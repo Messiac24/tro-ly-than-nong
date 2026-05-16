@@ -9,10 +9,10 @@ DATA_DIR = os.path.join(BASE_DIR, "data")
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
 
-# Ưu tiên lấy đường dẫn từ biến môi trường (cho Production/Docker), nếu không có mới dùng mặc định local
+# Ưu tiên lấy đường dẫn từ biến môi trường, nếu không sẽ dùng /tmp để đảm bảo quyền ghi trên Hugging Face
 SQLALCHEMY_DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    f"sqlite:///{os.path.join(DATA_DIR, 'nongsan_v2.sqlite3')}"
+    "sqlite:////tmp/nongsan_v2.sqlite3"
 )
 
 engine = create_engine(

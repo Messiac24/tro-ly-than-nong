@@ -6,14 +6,16 @@ import re
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 
-CHROMA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "chroma_db")
+# Sử dụng /tmp cho Vector DB để đảm bảo quyền ghi trên Hugging Face
+CHROMA_DIR = "/tmp/chroma_db"
 
 # Ngưỡng điểm tương đồng tối thiểu để giữ kết quả
 MIN_RELEVANCE_SCORE = 0.22
 # Giới hạn ký tự tối đa cho toàn bộ ngữ cảnh gửi lên LLM (tránh tràn Token)
 MAX_CONTEXT_CHARS = 4000 
 
-HF_CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "hf_cache")
+# Sử dụng /tmp cho HF Cache
+HF_CACHE_DIR = "/tmp/hf_cache"
 
 class KnowledgeBaseRetrieval:
     _instance = None

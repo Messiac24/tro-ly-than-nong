@@ -1,0 +1,23 @@
+version: "1.0"
+name: "agricultural_price_prediction"
+
+agents:
+  - id: hello
+    name: "Hello World Agent"
+    skill: hello-skill
+    model: claude-sonnet-4-5
+
+skills:
+  - id: hello-skill
+    path: ./.aidlc/skills/hello-skill.md
+
+environment: {}
+
+slash_commands:
+  - name: "/hello"
+    agent: hello
+
+sidebar:
+  views:
+    - type: agents-list
+    - type: skills-list

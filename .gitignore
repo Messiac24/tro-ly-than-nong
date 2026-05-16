@@ -34,3 +34,4 @@ server/data/
 server/ml/hf_cache/
 scratch/
 .agent/learning/tmp/
+.ast-graph/
